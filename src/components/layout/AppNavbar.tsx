@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { LogOut, Plus, LayoutDashboard, ShieldAlert, Key, User } from 'lucide-react'
+import { LogOut, Plus, LayoutDashboard, ShieldAlert, Key, User, Menu, X } from 'lucide-react' // 🔥 Added Menu and X
 
 interface AppNavbarProps {
   userRole?: string;
@@ -17,6 +17,9 @@ export function AppNavbar({ userRole }: AppNavbarProps) {
   const [isAdmin, setIsAdmin] = useState(false)
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  
+  // 🔥 NEW: State to control the mobile menu
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -27,7 +30,6 @@ export function AppNavbar({ userRole }: AppNavbarProps) {
         return
       }
 
-      // Set the user's email so we can display it!
       setUserEmail(user.email || null)
 
       const { data } = await supabase
@@ -49,20 +51,20 @@ export function AppNavbar({ userRole }: AppNavbarProps) {
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
-    // Force a hard reload to clear all states and go to auth
     window.location.href = '/auth'
   }
 
   return (
-    <nav className="bg-[#0A0F1E] text-white px-6 py-4 sticky top-0 z-50 shadow-md">
-      <div className="max-w-7xl mx-auto flex items-center justify-between">
+    <nav className="bg-[#0A0F1E] text-white sticky top-0 z-50 shadow-md">
+      {/* 🔥 The Main Desktop/Header Row */}
+      <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
         
         {/* Platform Logo */}
         <Link href="/" className="text-xl font-bold tracking-tight flex items-center gap-2">
           SplitPay<span className="text-[#C9A84C]">NG</span>
         </Link>
 
-        {/* Navigation Links */}
+        {/* 🔥 Navigation Links (DESKTOP ONLY) */}
         <div className="hidden md:flex items-center gap-8">
           <Link 
             href="/browse" 
@@ -105,48 +107,120 @@ export function AppNavbar({ userRole }: AppNavbarProps) {
           )}
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex items-center gap-4 sm:gap-6">
-          {isLoading ? (
-            <div className="w-20 h-5 bg-gray-800 animate-pulse rounded"></div>
-          ) : userEmail ? (
-            <>
-              {/* AUTHENTICATED: Show Email and Sign Out */}
-              <Link href="/create-pool" className="hidden sm:flex items-center gap-2 text-sm font-medium text-gray-300 hover:text-white transition-colors">
-                <Plus size={16} /> Create Pool
-              </Link>
+        {/* Action Buttons (Right Side) */}
+        <div className="flex items-center gap-4">
+          
+          {/* 🔥 Mobile Menu Toggle Button (Visible only on mobile) */}
+          <div className="md:hidden flex items-center">
+             {!isLoading && (
+               <button 
+                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                 className="text-gray-300 hover:text-white transition-colors"
+               >
+                 {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+               </button>
+             )}
+          </div>
 
-              <div className="hidden sm:flex items-center gap-1.5 text-xs font-bold text-[#C9A84C] bg-[#C9A84C]/10 px-3 py-1.5 rounded-full border border-[#C9A84C]/20">
-                <User size={14} /> {userEmail}
-              </div>
+          {/* Desktop Auth Buttons (Hidden on mobile) */}
+          <div className="hidden md:flex items-center gap-6">
+            {isLoading ? (
+              <div className="w-20 h-5 bg-gray-800 animate-pulse rounded"></div>
+            ) : userEmail ? (
+              <>
+                <Link href="/create-pool" className="flex items-center gap-2 text-sm font-medium text-gray-300 hover:text-white transition-colors">
+                  <Plus size={16} /> Create Pool
+                </Link>
 
-              <div className="w-px h-5 bg-gray-700 hidden sm:block"></div>
+                <div className="flex items-center gap-1.5 text-xs font-bold text-[#C9A84C] bg-[#C9A84C]/10 px-3 py-1.5 rounded-full border border-[#C9A84C]/20">
+                  <User size={14} /> {userEmail}
+                </div>
 
-              <button 
-                onClick={handleSignOut} 
-                className="text-gray-400 hover:text-white transition-colors flex items-center gap-2 text-sm font-medium"
-              >
-                <LogOut size={16} /> Sign Out
-              </button>
-            </>
-          ) : (
-            <>
-              {/* UNAUTHENTICATED: Show Login / Get Started */}
-              <Link href="/auth">
-                <button className="text-gray-300 hover:text-white transition-colors text-sm font-medium hidden sm:block">
-                  Sign In
+                <div className="w-px h-5 bg-gray-700"></div>
+
+                <button 
+                  onClick={handleSignOut} 
+                  className="text-gray-400 hover:text-white transition-colors flex items-center gap-2 text-sm font-medium"
+                >
+                  <LogOut size={16} /> Sign Out
                 </button>
+              </>
+            ) : (
+              <>
+                <Link href="/auth">
+                  <button className="text-gray-300 hover:text-white transition-colors text-sm font-medium">
+                    Sign In
+                  </button>
+                </Link>
+                <Link href="/auth">
+                  <button className="bg-[#C9A84C] hover:bg-yellow-500 text-[#0A0F1E] px-5 py-2 rounded-full text-sm font-bold transition-colors shadow-md">
+                    Get Started
+                  </button>
+                </Link>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* 🔥 THE NEW MOBILE DROPDOWN MENU */}
+      {isMobileMenuOpen && (
+        <div className="md:hidden absolute top-full left-0 w-full bg-[#0A0F1E] border-t border-gray-800 shadow-xl animate-in slide-in-from-top-2 flex flex-col px-6 py-6 space-y-6">
+          
+          {userEmail && (
+            <div className="flex items-center gap-2 text-sm font-bold text-[#C9A84C] bg-[#C9A84C]/10 px-4 py-2 rounded-xl border border-[#C9A84C]/20 w-fit mb-2">
+              <User size={14} /> {userEmail}
+            </div>
+          )}
+
+          <Link href="/browse" onClick={() => setIsMobileMenuOpen(false)} className={`text-base font-medium flex items-center gap-2 ${pathname === '/browse' ? 'text-[#C9A84C]' : 'text-gray-300'}`}>
+            Browse Pools
+          </Link>
+
+          {userEmail && (
+            <>
+              <Link href="/dashboard/subscriptions" onClick={() => setIsMobileMenuOpen(false)} className={`text-base font-medium flex items-center gap-2 ${pathname === '/dashboard/subscriptions' ? 'text-[#C9A84C]' : 'text-gray-300'}`}>
+                <Key size={18} /> My Subscriptions
               </Link>
-              <Link href="/auth">
-                <button className="bg-[#C9A84C] hover:bg-yellow-500 text-[#0A0F1E] px-5 py-2 rounded-full text-sm font-bold transition-colors shadow-md">
-                  Get Started
-                </button>
+              
+              <Link href="/dashboard" onClick={() => setIsMobileMenuOpen(false)} className={`text-base font-medium flex items-center gap-2 ${pathname === '/dashboard' ? 'text-[#C9A84C]' : 'text-gray-300'}`}>
+                <LayoutDashboard size={18} /> Host Dashboard
+              </Link>
+              
+              <Link href="/create-pool" onClick={() => setIsMobileMenuOpen(false)} className="text-base font-medium flex items-center gap-2 text-gray-300">
+                <Plus size={18} /> Create Pool
               </Link>
             </>
           )}
-        </div>
 
-      </div>
+          {isAdmin && (
+            <Link href="/admin/dashboard" onClick={() => setIsMobileMenuOpen(false)} className="text-sm font-bold flex items-center gap-2 text-red-400">
+              <ShieldAlert size={16} /> Admin Panel
+            </Link>
+          )}
+
+          <div className="w-full h-px bg-gray-800 my-2"></div>
+
+          {userEmail ? (
+            <button onClick={handleSignOut} className="text-red-400 flex items-center gap-2 text-base font-bold text-left w-full">
+              <LogOut size={18} /> Sign Out
+            </button>
+          ) : (
+            <div className="flex flex-col gap-4 pt-2">
+              <Link href="/auth" onClick={() => setIsMobileMenuOpen(false)} className="w-full">
+                <button className="w-full border border-gray-700 text-gray-300 hover:text-white px-5 py-3 rounded-xl text-sm font-bold transition-colors">
+                  Sign In
+                </button>
+              </Link>
+              <Link href="/auth" onClick={() => setIsMobileMenuOpen(false)} className="w-full">
+                <button className="w-full bg-[#C9A84C] text-[#0A0F1E] px-5 py-3 rounded-xl text-sm font-bold shadow-md">
+                  Get Started
+                </button>
+              </Link>
+            </div>
+          )}
+        </div>
+      )}
     </nav>
   )
 }
