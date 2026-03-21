@@ -47,6 +47,9 @@ function AuthForm() {
       return
     }
 
+    // 🔥 DEDUCE ROLE: If they are trying to go to /dashboard or /create-pool, they want to be a Host!
+    const intendedRole = (returnTo === '/dashboard' || returnTo === '/create-pool') ? 'host' : 'member';
+
     try {
       if (isLogin) {
         const { error } = await supabase.auth.signInWithPassword({ email, password })
@@ -59,7 +62,11 @@ function AuthForm() {
           email,
           password,
           options: {
-            data: { ndpr_consent: ndprConsent },
+            data: { 
+              ndpr_consent: ndprConsent,
+              // 🔥 THE FIX: Explicitly save their role to the 'profiles' table via user_metadata
+              role: intendedRole 
+            },
             emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`
           }
         })
