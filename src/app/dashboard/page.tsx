@@ -2,11 +2,15 @@
 'use client'
 
 import { useEffect, useState, Suspense } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { AppNavbar } from '@/components/layout/AppNavbar'
 import { Button } from '@/components/ui/Button'
 import { encryptData } from '@/lib/crypto'
 import { Wallet, Users, Key, Loader2, Edit3, X, CheckCircle2 } from 'lucide-react'
+
+// Disable caching for this page entirely
+export const revalidate = 0
 
 function HostDashboardContent() {
   const [pools, setPools] = useState<any[]>([])
@@ -17,6 +21,7 @@ function HostDashboardContent() {
   const [updateForm, setUpdateForm] = useState({ username: '', password: '' })
   const [isEncrypting, setIsEncrypting] = useState(false)
 
+  const router = useRouter()
   const supabase = createClient()
 
   useEffect(() => {
@@ -108,7 +113,10 @@ function HostDashboardContent() {
           <Wallet size={48} className="mx-auto text-gray-300 mb-4" />
           <h3 className="text-xl font-bold text-fintech-navy mb-2">No active pools</h3>
           <p className="text-gray-500 mb-6">Create a pool to start earning money from unused subscription seats.</p>
-          <Button onClick={() => window.location.href = '/create-pool'} className="bg-fintech-navy">Create New Pool</Button>
+          {/* router.push() never caches, unlike window.location.href */}
+          <Button onClick={() => router.push('/create-pool')} className="bg-fintech-navy">
+            Create New Pool
+          </Button>
         </div>
       ) : (
         <div className="grid gap-6 md:grid-cols-2">
@@ -129,10 +137,10 @@ function HostDashboardContent() {
                 </div>
 
                 <div className="flex items-center gap-4 mb-6 pb-6 border-b border-gray-100">
-                   <div className="flex items-center gap-2 text-gray-600">
-                     <Users size={16} className="text-fintech-gold" />
-                     <span className="text-sm font-bold">{pool.current_seats} / {pool.max_seats} Filled</span>
-                   </div>
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <Users size={16} className="text-fintech-gold" />
+                    <span className="text-sm font-bold">{pool.current_seats} / {pool.max_seats} Filled</span>
+                  </div>
                 </div>
 
                 <div className="bg-gray-50 rounded-2xl p-4 mb-4 flex justify-between items-center">
