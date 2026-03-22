@@ -21,21 +21,32 @@ function WordReveal({ text, className = '', style = {} }: { text: string; classN
   )
 }
 
+type PoolItem = {
+  name: string
+  price: string
+  seats: string
+  color: string
+  icon: string | null
+  useImg: boolean
+  label?: string
+}
+
+const POOL_ITEMS: PoolItem[] = [
+  { name: 'Netflix Premium 4K', price: '₦2,500/seat', seats: '4/5', color: 'E50914', icon: 'netflix', useImg: true },
+  { name: 'Spotify Family',     price: '₦1,200/seat', seats: '5/6', color: '1ED760', icon: 'spotify', useImg: true },
+  { name: 'ChatGPT Plus',       price: '₦3,500/seat', seats: '2/4', color: '74AA9C', icon: null,      useImg: false, label: 'GPT' },
+]
+
 export function HeroSection() {
   const containerRef = useRef<HTMLDivElement>(null)
-  const mockupRef = useRef<HTMLDivElement>(null)
+  const mockupRef    = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const onMove = (e: MouseEvent) => {
       if (!mockupRef.current) return
-      const x = (e.clientX / window.innerWidth - 0.5) * 18
+      const x = (e.clientX / window.innerWidth  - 0.5) * 18
       const y = (e.clientY / window.innerHeight - 0.5) * 18
-      gsap.to(mockupRef.current, {
-        rotateY: x,
-        rotateX: -y,
-        duration: 1.2,
-        ease: 'power2.out',
-      })
+      gsap.to(mockupRef.current, { rotateY: x, rotateX: -y, duration: 1.2, ease: 'power2.out' })
     }
     window.addEventListener('mousemove', onMove)
     return () => window.removeEventListener('mousemove', onMove)
@@ -45,36 +56,17 @@ export function HeroSection() {
     if (!containerRef.current) return
 
     const tl = gsap.timeline({ delay: 1.5 })
-
     tl.from('.hero-badge', { opacity: 0, y: 20, duration: 0.6, ease: 'power3.out' })
       .to(containerRef.current.querySelectorAll('.word-inner'), {
-        y: 0,
-        duration: 1,
-        stagger: 0.05,
-        ease: 'power4.out',
+        y: 0, duration: 1, stagger: 0.05, ease: 'power4.out',
       }, '-=0.2')
-      .from('.hero-para', { opacity: 0, y: 30, duration: 0.8, ease: 'power3.out' }, '-=0.6')
-      .from('.hero-btn', { opacity: 0, y: 20, duration: 0.6, stagger: 0.1, ease: 'power3.out' }, '-=0.5')
+      .from('.hero-para',  { opacity: 0, y: 30, duration: 0.8, ease: 'power3.out' }, '-=0.6')
+      .from('.hero-btn',   { opacity: 0, y: 20, duration: 0.6, stagger: 0.1, ease: 'power3.out' }, '-=0.5')
       .from('.hero-trust', { opacity: 0, x: -20, duration: 0.6, ease: 'power3.out' }, '-=0.4')
       .from('.hero-mockup', { opacity: 0, x: 80, scale: 0.93, duration: 1.4, ease: 'power4.out' }, '-=1.2')
 
-    gsap.to('.hero-mockup', {
-      y: -16,
-      duration: 3.5,
-      repeat: -1,
-      yoyo: true,
-      ease: 'power1.inOut',
-      delay: 3,
-    })
-
-    gsap.to('.hero-glow', {
-      scale: 1.3,
-      opacity: 0.35,
-      duration: 5,
-      repeat: -1,
-      yoyo: true,
-      ease: 'sine.inOut',
-    })
+    gsap.to('.hero-mockup', { y: -16, duration: 3.5, repeat: -1, yoyo: true, ease: 'power1.inOut', delay: 3 })
+    gsap.to('.hero-glow',   { scale: 1.3, opacity: 0.35, duration: 5, repeat: -1, yoyo: true, ease: 'sine.inOut' })
   }, { scope: containerRef })
 
   return (
@@ -83,7 +75,7 @@ export function HeroSection() {
       className="relative min-h-screen flex items-center px-6 lg:px-16 overflow-hidden"
       style={{ paddingTop: '80px' }}
     >
-      {/* Grid bg */}
+      {/* Grid background */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
@@ -94,11 +86,15 @@ export function HeroSection() {
       />
       <div
         className="hero-glow absolute top-1/3 left-1/4 w-[700px] h-[700px] rounded-full pointer-events-none"
-        style={{ background: 'radial-gradient(circle, rgba(212,175,55,0.08) 0%, transparent 65%)', transformOrigin: 'center' }}
+        style={{
+          background: 'radial-gradient(circle, rgba(212,175,55,0.08) 0%, transparent 65%)',
+          transformOrigin: 'center',
+        }}
       />
 
       <div className="max-w-7xl mx-auto w-full grid lg:grid-cols-2 gap-16 items-center">
-        {/* Left */}
+
+        {/* ── Left Column ── */}
         <div className="flex flex-col items-start">
           <div
             className="hero-badge inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold mb-8"
@@ -112,13 +108,12 @@ export function HeroSection() {
             100% Escrow Protected by Paystack
           </div>
 
-          <h1 className="font-black leading-[0.92] tracking-tight mb-8" style={{ fontSize: 'clamp(3rem, 6vw, 5.5rem)' }}>
-            <div className="text-white">
-              <WordReveal text="Split Premium" />
-            </div>
-            <div className="text-white">
-              <WordReveal text="Costs," />
-            </div>
+          <h1
+            className="font-black leading-[0.92] tracking-tight mb-8"
+            style={{ fontSize: 'clamp(3rem, 6vw, 5.5rem)' }}
+          >
+            <div className="text-white"><WordReveal text="Split Premium" /></div>
+            <div className="text-white"><WordReveal text="Costs," /></div>
             <div>
               <WordReveal
                 text="Without the Risk."
@@ -165,8 +160,16 @@ export function HeroSection() {
           <div className="hero-trust flex items-center gap-4">
             <div className="flex -space-x-2">
               {[1, 2, 3, 4].map(i => (
-                <div key={i} className="w-9 h-9 rounded-full overflow-hidden" style={{ border: '2px solid #05080F' }}>
-                  <img src={`https://i.pravatar.cc/100?img=${i + 10}`} alt="" className="w-full h-full object-cover" />
+                <div
+                  key={i}
+                  className="w-9 h-9 rounded-full overflow-hidden"
+                  style={{ border: '2px solid #05080F' }}
+                >
+                  <img
+                    src={`https://i.pravatar.cc/100?img=${i + 10}`}
+                    alt=""
+                    className="w-full h-full object-cover"
+                  />
                 </div>
               ))}
             </div>
@@ -178,12 +181,14 @@ export function HeroSection() {
                   </svg>
                 ))}
               </div>
-              <p className="text-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>Trusted by 5,000+ Nigerians</p>
+              <p className="text-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                Trusted by 5,000+ Nigerians
+              </p>
             </div>
           </div>
         </div>
 
-        {/* Right - 3D Mockup */}
+        {/* ── Right Column — 3D Mockup ── */}
         <div
           className="hero-mockup relative"
           ref={mockupRef}
@@ -202,36 +207,58 @@ export function HeroSection() {
               <h3 className="font-bold text-white">Active Pools</h3>
               <span
                 className="text-xs font-bold px-3 py-1 rounded-full"
-                style={{ background: 'rgba(34,197,94,0.12)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.2)' }}
+                style={{
+                  background: 'rgba(34,197,94,0.12)',
+                  color: '#4ade80',
+                  border: '1px solid rgba(34,197,94,0.2)',
+                }}
               >
                 ● Live Escrow
               </span>
             </div>
 
             <div className="space-y-3">
-              {[
-                { name: 'Netflix Premium 4K', price: '₦2,500/seat', seats: '4/5', color: 'E50914', icon: 'netflix' },
-                { name: 'Spotify Family', price: '₦1,200/seat', seats: '5/6', color: '1ED760', icon: 'spotify' },
-                { name: 'ChatGPT Plus', price: '₦3,500/seat', seats: '2/4', color: '74AA9C', icon: 'openai' },
-              ].map(item => (
+              {POOL_ITEMS.map(item => (
                 <div
                   key={item.name}
                   className="flex items-center gap-3 p-3.5 rounded-xl"
-                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.05)' }}
+                  style={{
+                    background: 'rgba(255,255,255,0.04)',
+                    border: '1px solid rgba(255,255,255,0.05)',
+                  }}
                 >
+                  {/* Icon */}
                   <div
                     className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
                     style={{ background: `#${item.color}18` }}
                   >
-                    <img src={`https://cdn.simpleicons.org/${item.icon}/${item.color}`} alt="" className="w-5 h-5" />
+                    {item.useImg ? (
+                      <img
+                        src={`https://cdn.simpleicons.org/${item.icon}/${item.color}`}
+                        alt={item.name}
+                        className="w-5 h-5"
+                      />
+                    ) : (
+                      <span
+                        className="text-[11px] font-black tracking-tight"
+                        style={{ color: `#${item.color}` }}
+                      >
+                        {item.label}
+                      </span>
+                    )}
                   </div>
+
+                  {/* Info */}
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-white text-sm truncate">{item.name}</p>
                     <p className="text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>{item.price}</p>
                   </div>
+
+                  {/* Seats */}
                   <div className="text-right flex-shrink-0">
                     <div className="flex items-center gap-1 text-xs font-bold text-white">
-                      <Users size={11} style={{ color: '#D4AF37' }} />{item.seats}
+                      <Users size={11} style={{ color: '#D4AF37' }} />
+                      {item.seats}
                     </div>
                     <p className="text-[10px] mt-0.5" style={{ color: '#4ade80' }}>1 left</p>
                   </div>
@@ -239,6 +266,7 @@ export function HeroSection() {
               ))}
             </div>
 
+            {/* Escrow badge */}
             <div
               className="absolute -bottom-5 -right-5 flex items-center gap-3 px-5 py-3.5 rounded-2xl"
               style={{
@@ -246,16 +274,22 @@ export function HeroSection() {
                 boxShadow: '0 16px 48px rgba(212,175,55,0.45)',
               }}
             >
-              <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: 'rgba(5,8,15,0.2)' }}>
+              <div
+                className="w-8 h-8 rounded-full flex items-center justify-center"
+                style={{ background: 'rgba(5,8,15,0.2)' }}
+              >
                 <CheckCircle2 size={16} color="#05080F" />
               </div>
               <div>
-                <p className="text-[10px] font-semibold" style={{ color: 'rgba(5,8,15,0.6)' }}>Payment Secured</p>
+                <p className="text-[10px] font-semibold" style={{ color: 'rgba(5,8,15,0.6)' }}>
+                  Payment Secured
+                </p>
                 <p className="text-sm font-black" style={{ color: '#05080F' }}>Escrow Locked</p>
               </div>
             </div>
           </div>
         </div>
+
       </div>
     </section>
   )
