@@ -116,6 +116,7 @@ function HostDashboardContent() {
           <Wallet size={48} className="mx-auto text-gray-300 mb-4" />
           <h3 className="text-xl font-bold text-fintech-navy mb-2">No active pools</h3>
           <p className="text-gray-500 mb-6">Create a pool to start earning money from unused subscription seats.</p>
+          {/* 🔥 FIXED LINK: Now points to /dashboard/create */}
           <Button onClick={() => window.location.href = '/dashboard/create'} className="bg-fintech-navy">Create Your First Pool</Button>
         </div>
       ) : (
