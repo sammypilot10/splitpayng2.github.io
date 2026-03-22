@@ -5,7 +5,7 @@ import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useGSAP } from '@gsap/react'
 
-gsap.registerPlugin(ScrollTrigger)
+gsap.registerPlugin(ScrollTrigger, useGSAP)
 
 interface AnimatedSectionProps {
   children: React.ReactNode
@@ -14,15 +14,19 @@ interface AnimatedSectionProps {
   delay?: number
 }
 
-export function AnimatedSection({ 
-  children, 
-  className = '', 
+export function AnimatedSection({
+  children,
+  className = '',
   direction = 'up',
-  delay = 0 
+  delay = 0,
 }: AnimatedSectionProps) {
   const container = useRef<HTMLDivElement>(null)
 
   useGSAP(() => {
+    if (!container.current) return
+
+    const reveals = container.current.querySelectorAll('.section-reveal')
+
     const fromVars: gsap.TweenVars = {
       opacity: 0,
       duration: 1,
@@ -30,7 +34,7 @@ export function AnimatedSection({
       ease: 'power3.out',
       scrollTrigger: {
         trigger: container.current,
-        start: 'top 82%',
+        start: 'top 85%',
       },
     }
 
@@ -40,19 +44,20 @@ export function AnimatedSection({
 
     gsap.from(container.current, fromVars)
 
-    // Stagger any children with class "section-reveal"
-    gsap.from('.section-reveal', {
-      y: 40,
-      opacity: 0,
-      duration: 0.9,
-      stagger: 0.12,
-      ease: 'power3.out',
-      scrollTrigger: {
-        trigger: container.current,
-        start: 'top 80%',
-      },
-    })
-  }, { scope: container })
+    if (reveals.length > 0) {
+      gsap.from(reveals, {
+        y: 40,
+        opacity: 0,
+        duration: 0.9,
+        stagger: 0.12,
+        ease: 'power3.out',
+        scrollTrigger: {
+          trigger: container.current,
+          start: 'top 82%',
+        },
+      })
+    }
+  }, { scope: container, dependencies: [] })
 
   return (
     <div ref={container} className={className}>
