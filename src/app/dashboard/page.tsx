@@ -13,7 +13,6 @@ function HostDashboardContent() {
   const [loading, setLoading] = useState(true)
   const [withdrawingId, setWithdrawingId] = useState<string | null>(null)
   
-  // State for updating credentials
   const [updatingPoolId, setUpdatingPoolId] = useState<string | null>(null)
   const [updateForm, setUpdateForm] = useState({ username: '', password: '' })
   const [isEncrypting, setIsEncrypting] = useState(false)
@@ -57,7 +56,6 @@ function HostDashboardContent() {
     }
   }
 
-  // 🔥 UPDATED: Securely encrypt and send BOTH the encrypted string and the unique IV lock
   const handleUpdateCredentials = async (poolId: string) => {
     if (!updateForm.username || !updateForm.password) {
       alert("Please enter both the login email and password.")
@@ -66,17 +64,11 @@ function HostDashboardContent() {
 
     setIsEncrypting(true)
     try {
-      // 1. Lock it down using your military-grade encryption in the browser
       const rawString = JSON.stringify(updateForm)
-      
-      // We cast to 'any' here so TypeScript lets us grab the nested properties
       const cryptoResult = await encryptData(rawString) as any
-      
-      // Grab the encrypted string and the IV from the crypto object
       const encryptedData = cryptoResult.encryptedData || cryptoResult.ciphertext || cryptoResult
       const iv = cryptoResult.iv || ''
 
-      // 2. Send both the locked vault AND the IV to the database API
       const res = await fetch('/api/credentials/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -86,8 +78,8 @@ function HostDashboardContent() {
       if (!res.ok) throw new Error("Failed to update credentials in database.")
 
       alert("Vault Updated Successfully! Your members will now see the new password.")
-      setUpdatingPoolId(null) // Close the form
-      setUpdateForm({ username: '', password: '' }) // Clear the inputs
+      setUpdatingPoolId(null)
+      setUpdateForm({ username: '', password: '' })
     } catch (err: any) {
       alert("Error updating vault: " + err.message)
     } finally {
@@ -116,13 +108,11 @@ function HostDashboardContent() {
           <Wallet size={48} className="mx-auto text-gray-300 mb-4" />
           <h3 className="text-xl font-bold text-fintech-navy mb-2">No active pools</h3>
           <p className="text-gray-500 mb-6">Create a pool to start earning money from unused subscription seats.</p>
-          {/* 🔥 FIXED LINK: Now points to /dashboard/create */}
-          <Button onClick={() => window.location.href = '/dashboard/create'} className="bg-fintech-navy">Create Your First Pool</Button>
+          <Button onClick={() => window.location.href = '/create-pool'} className="bg-fintech-navy">Create New Pool</Button>
         </div>
       ) : (
         <div className="grid gap-6 md:grid-cols-2">
           {pools.map((pool) => {
-            // THE 20% PLATFORM FEE MATH (Host keeps 80%)
             const totalEarned = (pool.price_per_seat * pool.current_seats) * 0.8;
             const isUpdating = updatingPoolId === pool.id;
 
@@ -160,7 +150,6 @@ function HostDashboardContent() {
                   </Button>
                 </div>
 
-                {/* The Update Credentials UI */}
                 <div className="mt-auto pt-2">
                   {!isUpdating ? (
                     <button 
