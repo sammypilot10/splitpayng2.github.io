@@ -10,7 +10,6 @@ import { encryptData } from '@/lib/crypto'
 import { Wallet, Users, Key, Loader2, Edit3, X, CheckCircle2 } from 'lucide-react'
 
 // Disable caching for this page entirely
-export const revalidate = 0
 
 function HostDashboardContent() {
   const [pools, setPools] = useState<any[]>([])
