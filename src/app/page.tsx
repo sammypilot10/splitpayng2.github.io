@@ -95,13 +95,13 @@ export default async function Home({ searchParams }: { searchParams: { category?
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
-              {/* 🔥 FIXED: Pointing this directly to our new /browse page! */}
               <Link href="/browse" className="w-full sm:w-auto">
                 <Button variant="primary" className="w-full sm:w-auto text-lg px-8 py-6 rounded-full shadow-xl shadow-fintech-navy/10 hover:shadow-2xl hover:-translate-y-0.5 transition-all">
                   Browse Public Pools
                 </Button>
               </Link>
-              <Link href="/auth" className="w-full sm:w-auto">
+              {/* 🔥 FIXED: Now explicitly passing the returnTo ticket so they become a Host! */}
+              <Link href="/auth?returnTo=/create-pool" className="w-full sm:w-auto">
                 <Button variant="outline" className="w-full sm:w-auto text-lg px-8 py-6 rounded-full border-2 bg-white hover:bg-gray-50 transition-all">
                   Become a Host
                 </Button>
@@ -212,7 +212,8 @@ export default async function Home({ searchParams }: { searchParams: { category?
         ) : pools?.length === 0 ? (
           <div className="p-12 bg-white rounded-3xl border border-gray-100 text-center shadow-sm">
             <p className="text-gray-500 text-lg mb-4">No public pools available in this category right now.</p>
-            <Link href="/auth">
+            {/* 🔥 FIXED: Now explicitly passing the returnTo ticket! */}
+            <Link href="/auth?returnTo=/create-pool">
               <Button variant="outline">Become the first Host</Button>
             </Link>
           </div>
