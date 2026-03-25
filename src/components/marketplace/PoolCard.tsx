@@ -1,10 +1,35 @@
 // src/components/marketplace/PoolCard.tsx
 import { Database } from '@/types/supabase'
 import { Button } from '@/components/ui/Button'
-import { Users, Component, Tv, PlaySquare, Bot, Film } from 'lucide-react'
+import { Users, Component, PlaySquare, Bot } from 'lucide-react'
 import Link from 'next/link'
 
 type Pool = Database['public']['Tables']['pools']['Row']
+
+// --- CUSTOM UNBREAKABLE SVGS FOR MISSING/BROKEN LOGOS ---
+
+function PrimeVideoIcon({ size = 24 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      {/* The iconic Prime smile/arrow */}
+      <path d="M4 16.5C7.5 19 15.5 20 20.5 16" stroke="#00A8E1" strokeWidth="2.5" strokeLinecap="round"/>
+      <polygon points="19.5,14.5 22,15.5 20,18.5" fill="#00A8E1"/>
+      {/* The Prime text */}
+      <text x="12" y="13.5" fontFamily="system-ui, -apple-system, sans-serif" fontStyle="italic" fontWeight="900" fontSize="9" fill="#00A8E1" textAnchor="middle" letterSpacing="-0.5">prime</text>
+    </svg>
+  )
+}
+
+function DSTVIcon({ size = 24 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      {/* The DSTV Blue Globe */}
+      <circle cx="12" cy="12" r="11" fill="#0098db"/>
+      {/* The DSTV Text */}
+      <text x="12" y="15.5" fontFamily="system-ui, -apple-system, sans-serif" fontWeight="900" fontSize="8" fill="white" textAnchor="middle" letterSpacing="-0.2">DStv</text>
+    </svg>
+  )
+}
 
 function OpenAIIcon({ size = 24 }: { size?: number }) {
   return (
@@ -13,6 +38,8 @@ function OpenAIIcon({ size = 24 }: { size?: number }) {
     </svg>
   )
 }
+
+// ------------------------------------------------
 
 type IconData = {
   url: string | null
@@ -25,13 +52,14 @@ type IconData = {
 
 const getIconData = (name: string): IconData => {
   const n = name.toLowerCase()
+  
+  // 🔥 Using our new native SVGs for Prime & DSTV so they NEVER break
+  if (n.includes('prime'))                             return { url: null, svgIcon: 'prime',                              bg: 'rgba(0,168,225,0.12)',    border: 'rgba(0,168,225,0.2)' }
+  if (n.includes('dstv'))                              return { url: null, svgIcon: 'dstv',                               bg: 'rgba(0,152,219,0.12)',    border: 'rgba(0,152,219,0.2)' }
+  
+  // Other Services
   if (n.includes('netflix'))                           return { url: 'https://cdn.simpleicons.org/netflix/E50914',        bg: 'rgba(229,9,20,0.12)',     border: 'rgba(229,9,20,0.2)' }
-  
-  // 🔥 NO MORE EXTERNAL LINKS FOR THESE. Guaranteed to render locally!
-  if (n.includes('prime'))                             return { url: null, svgIcon: 'film',                               bg: 'rgba(0,168,225,0.12)',    border: 'rgba(0,168,225,0.2)', labelColor: '#00a8e1' }
-  if (n.includes('dstv'))                              return { url: null, svgIcon: 'tv',                                 bg: 'rgba(0,152,219,0.12)',    border: 'rgba(0,152,219,0.2)', labelColor: '#0098db' }
   if (n.includes('showmax'))                           return { url: null, svgIcon: 'play',                               bg: 'rgba(216,25,33,0.12)',    border: 'rgba(216,25,33,0.2)', labelColor: '#d81921' }
-  
   if (n.includes('youtube'))                           return { url: 'https://cdn.simpleicons.org/youtube/FF0000',        bg: 'rgba(255,0,0,0.12)',      border: 'rgba(255,0,0,0.2)' }
   if (n.includes('crunchyroll'))                       return { url: 'https://cdn.simpleicons.org/crunchyroll/F47521',    bg: 'rgba(244,117,33,0.12)',   border: 'rgba(244,117,33,0.2)' }
   if (n.includes('spotify'))                           return { url: 'https://cdn.simpleicons.org/spotify/1ED760',        bg: 'rgba(30,215,96,0.12)',    border: 'rgba(30,215,96,0.2)' }
@@ -88,16 +116,16 @@ export function PoolCard({ pool }: { pool: Pool }) {
         >
           {icon.url ? (
             <img src={icon.url} alt={pool.service_name} className="w-6 h-6" />
+          ) : icon.svgIcon === 'prime' ? (
+            <PrimeVideoIcon size={24} />
+          ) : icon.svgIcon === 'dstv' ? (
+            <DSTVIcon size={26} />
           ) : icon.svgIcon === 'openai' ? (
             <OpenAIIcon size={22} />
-          ) : icon.svgIcon === 'tv' ? (
-            <Tv size={20} style={{ color: icon.labelColor }} />
           ) : icon.svgIcon === 'play' ? (
             <PlaySquare size={20} style={{ color: icon.labelColor }} />
           ) : icon.svgIcon === 'bot' ? (
             <Bot size={20} style={{ color: icon.labelColor }} />
-          ) : icon.svgIcon === 'film' ? (
-            <Film size={20} style={{ color: icon.labelColor }} />
           ) : icon.label ? (
             <span className="text-[11px] font-black" style={{ color: icon.labelColor || '#D4AF37' }}>
               {icon.label}
