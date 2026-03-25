@@ -1,7 +1,8 @@
 // src/components/marketplace/PoolCard.tsx
 import { Database } from '@/types/supabase'
 import { Button } from '@/components/ui/Button'
-import { Users, Component } from 'lucide-react'
+// 🔥 Added new Lucide icons for services that don't have SimpleIcons
+import { Users, Component, Tv, PlaySquare, Bot } from 'lucide-react'
 import Link from 'next/link'
 
 type Pool = Database['public']['Tables']['pools']['Row']
@@ -26,23 +27,34 @@ type IconData = {
 const getIconData = (name: string): IconData => {
   const n = name.toLowerCase()
   if (n.includes('netflix'))                           return { url: 'https://cdn.simpleicons.org/netflix/E50914',        bg: 'rgba(229,9,20,0.12)',     border: 'rgba(229,9,20,0.2)' }
-  if (n.includes('prime'))                             return { url: 'https://cdn.simpleicons.org/primevideo/00A8E1',     bg: 'rgba(0,168,225,0.12)',    border: 'rgba(0,168,225,0.2)' }
-  if (n.includes('youtube'))                           return { url: 'https://cdn.simpleicons.org/youtube/FF0000',        bg: 'rgba(255,0,0,0.12)',       border: 'rgba(255,0,0,0.2)' }
-  if (n.includes('crunchyroll'))                       return { url: 'https://cdn.simpleicons.org/crunchyroll/F47521',    bg: 'rgba(244,117,33,0.12)',    border: 'rgba(244,117,33,0.2)' }
-  if (n.includes('spotify'))                           return { url: 'https://cdn.simpleicons.org/spotify/1ED760',        bg: 'rgba(30,215,96,0.12)',     border: 'rgba(30,215,96,0.2)' }
-  if (n.includes('apple'))                             return { url: 'https://cdn.simpleicons.org/applemusic/FA243C',     bg: 'rgba(250,36,60,0.12)',     border: 'rgba(250,36,60,0.2)' }
-  if (n.includes('chatgpt') || n.includes('openai'))  return { url: null, svgIcon: 'openai',                             bg: 'rgba(116,170,156,0.12)',   border: 'rgba(116,170,156,0.2)' }
-  if (n.includes('claude') || n.includes('anthropic'))return { url: 'https://cdn.simpleicons.org/anthropic/D97757',      bg: 'rgba(217,119,87,0.12)',    border: 'rgba(217,119,87,0.2)' }
-  if (n.includes('gemini'))                            return { url: 'https://cdn.simpleicons.org/googlegemini/8E75B2',  bg: 'rgba(142,117,178,0.12)',   border: 'rgba(142,117,178,0.2)' }
-  if (n.includes('perplexity'))                        return { url: 'https://cdn.simpleicons.org/perplexity/22B8CD',    bg: 'rgba(34,184,205,0.12)',    border: 'rgba(34,184,205,0.2)' }
-  if (n.includes('copilot') || n.includes('github'))  return { url: 'https://cdn.simpleicons.org/github/ffffff',         bg: 'rgba(255,255,255,0.08)',   border: 'rgba(255,255,255,0.12)' }
-  if (n.includes('canva'))                             return { url: 'https://cdn.simpleicons.org/canva/00C4CC',          bg: 'rgba(0,196,204,0.12)',     border: 'rgba(0,196,204,0.2)' }
-  if (n.includes('microsoft'))                         return { url: 'https://cdn.simpleicons.org/microsoft365/D83B01',  bg: 'rgba(216,59,1,0.12)',      border: 'rgba(216,59,1,0.2)' }
-  if (n.includes('adobe'))                             return { url: 'https://cdn.simpleicons.org/adobe/FF0000',          bg: 'rgba(255,0,0,0.12)',       border: 'rgba(255,0,0,0.2)' }
-  if (n.includes('playstation'))                       return { url: 'https://cdn.simpleicons.org/playstation/003791',   bg: 'rgba(0,55,145,0.12)',      border: 'rgba(0,55,145,0.2)' }
-  if (n.includes('xbox'))                              return { url: 'https://cdn.simpleicons.org/xbox/107C10',           bg: 'rgba(16,124,16,0.12)',     border: 'rgba(16,124,16,0.2)' }
-  if (n.includes('nintendo'))                          return { url: 'https://cdn.simpleicons.org/nintendoswitch/E60012', bg: 'rgba(230,0,18,0.12)',      border: 'rgba(230,0,18,0.2)' }
-  return { url: null,                                                                                                      bg: 'rgba(212,175,55,0.08)',    border: 'rgba(212,175,55,0.15)' }
+  // 🔥 Fixed Prime Video by using the reliable 'amazon' slug
+  if (n.includes('prime'))                             return { url: 'https://cdn.simpleicons.org/amazon/00A8E1',         bg: 'rgba(0,168,225,0.12)',    border: 'rgba(0,168,225,0.2)' }
+  // 🔥 Added custom Lucide fallbacks for DSTV and Showmax
+  if (n.includes('dstv'))                              return { url: null, svgIcon: 'tv',                                 bg: 'rgba(0,152,219,0.12)',    border: 'rgba(0,152,219,0.2)', labelColor: '#0098db' }
+  if (n.includes('showmax'))                           return { url: null, svgIcon: 'play',                               bg: 'rgba(216,25,33,0.12)',    border: 'rgba(216,25,33,0.2)', labelColor: '#d81921' }
+  
+  if (n.includes('youtube'))                           return { url: 'https://cdn.simpleicons.org/youtube/FF0000',        bg: 'rgba(255,0,0,0.12)',      border: 'rgba(255,0,0,0.2)' }
+  if (n.includes('crunchyroll'))                       return { url: 'https://cdn.simpleicons.org/crunchyroll/F47521',    bg: 'rgba(244,117,33,0.12)',   border: 'rgba(244,117,33,0.2)' }
+  if (n.includes('spotify'))                           return { url: 'https://cdn.simpleicons.org/spotify/1ED760',        bg: 'rgba(30,215,96,0.12)',    border: 'rgba(30,215,96,0.2)' }
+  if (n.includes('apple'))                             return { url: 'https://cdn.simpleicons.org/applemusic/FA243C',     bg: 'rgba(250,36,60,0.12)',    border: 'rgba(250,36,60,0.2)' }
+  if (n.includes('audiomack'))                         return { url: 'https://cdn.simpleicons.org/audiomack/FFA200',      bg: 'rgba(255,162,0,0.12)',    border: 'rgba(255,162,0,0.2)' }
+  
+  if (n.includes('chatgpt') || n.includes('openai'))   return { url: null, svgIcon: 'openai',                             bg: 'rgba(116,170,156,0.12)',  border: 'rgba(116,170,156,0.2)' }
+  if (n.includes('claude') || n.includes('anthropic')) return { url: 'https://cdn.simpleicons.org/anthropic/D97757',      bg: 'rgba(217,119,87,0.12)',   border: 'rgba(217,119,87,0.2)' }
+  if (n.includes('gemini'))                            return { url: 'https://cdn.simpleicons.org/googlegemini/8E75B2',   bg: 'rgba(142,117,178,0.12)',  border: 'rgba(142,117,178,0.2)' }
+  if (n.includes('perplexity'))                        return { url: 'https://cdn.simpleicons.org/perplexity/22B8CD',     bg: 'rgba(34,184,205,0.12)',   border: 'rgba(34,184,205,0.2)' }
+  if (n.includes('midjourney'))                        return { url: null, svgIcon: 'bot',                                bg: 'rgba(255,255,255,0.08)',  border: 'rgba(255,255,255,0.2)', labelColor: '#ffffff' }
+  if (n.includes('copilot') || n.includes('github'))   return { url: 'https://cdn.simpleicons.org/github/ffffff',         bg: 'rgba(255,255,255,0.08)',  border: 'rgba(255,255,255,0.12)' }
+  
+  if (n.includes('canva'))                             return { url: 'https://cdn.simpleicons.org/canva/00C4CC',          bg: 'rgba(0,196,204,0.12)',    border: 'rgba(0,196,204,0.2)' }
+  if (n.includes('microsoft'))                         return { url: 'https://cdn.simpleicons.org/microsoft365/D83B01',   bg: 'rgba(216,59,1,0.12)',     border: 'rgba(216,59,1,0.2)' }
+  if (n.includes('adobe'))                             return { url: 'https://cdn.simpleicons.org/adobe/FF0000',          bg: 'rgba(255,0,0,0.12)',      border: 'rgba(255,0,0,0.2)' }
+  
+  if (n.includes('playstation'))                       return { url: 'https://cdn.simpleicons.org/playstation/003791',    bg: 'rgba(0,55,145,0.12)',     border: 'rgba(0,55,145,0.2)' }
+  if (n.includes('xbox'))                              return { url: 'https://cdn.simpleicons.org/xbox/107C10',           bg: 'rgba(16,124,16,0.12)',    border: 'rgba(16,124,16,0.2)' }
+  if (n.includes('nintendo'))                          return { url: 'https://cdn.simpleicons.org/nintendoswitch/E60012', bg: 'rgba(230,0,18,0.12)',     border: 'rgba(230,0,18,0.2)' }
+  
+  return { url: null,                                                                                                     bg: 'rgba(212,175,55,0.08)',   border: 'rgba(212,175,55,0.15)' }
 }
 
 export function PoolCard({ pool }: { pool: Pool }) {
@@ -75,10 +87,17 @@ export function PoolCard({ pool }: { pool: Pool }) {
           className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
           style={{ background: icon.bg, border: `1px solid ${icon.border}` }}
         >
+          {/* 🔥 This rendering logic handles all our new custom fallbacks */}
           {icon.url ? (
             <img src={icon.url} alt={pool.service_name} className="w-6 h-6" />
           ) : icon.svgIcon === 'openai' ? (
             <OpenAIIcon size={22} />
+          ) : icon.svgIcon === 'tv' ? (
+            <Tv size={20} style={{ color: icon.labelColor }} />
+          ) : icon.svgIcon === 'play' ? (
+            <PlaySquare size={20} style={{ color: icon.labelColor }} />
+          ) : icon.svgIcon === 'bot' ? (
+            <Bot size={20} style={{ color: icon.labelColor }} />
           ) : icon.label ? (
             <span className="text-[11px] font-black" style={{ color: icon.labelColor || '#D4AF37' }}>
               {icon.label}
