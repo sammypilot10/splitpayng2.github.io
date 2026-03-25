@@ -5,7 +5,7 @@ import { MessageCircle } from 'lucide-react'
 
 export function WhatsAppButton() {
   // Put your real WhatsApp number here (Use 234 but no + sign)
-  const adminWhatsAppNumber = "2348117060606" 
+  const adminWhatsAppNumber = "2348117060606"
   
   const defaultMessage = "Hello SplitPayNG Support, I need help with my subscription pool."
   const whatsappLink = `https://wa.me/${adminWhatsAppNumber}?text=${encodeURIComponent(defaultMessage)}`

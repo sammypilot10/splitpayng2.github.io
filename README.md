@@ -1,36 +1,24 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🛡️ SplitPayNG 
 
-## Getting Started
+**Share premium subscriptions without the financial anxiety.**
 
-First, run the development server:
+SplitPayNG is a secure, automated fintech marketplace designed for the Nigerian market. It connects people looking to share the cost of premium digital subscriptions (like Netflix, Spotify, DSTV Stream, and AI Tools) while eliminating the risk of social media scams.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+### ✨ The Problem We Solve
+Account sharing is common, but it requires blind trust. Buyers get scammed by fake sellers, and legitimate account owners struggle to collect monthly payments from their sharers. 
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 🚀 Our Solution
+SplitPayNG acts as a trustless middleman by combining **end-to-end credential encryption** with a **strict 48-hour Escrow system**.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 🛠️ Key Features
+* **48-Hour Escrow Protection (Paystack):** When a member joins a pool, their money is locked. The host only gets paid after the member verifies the login credentials work.
+* **Military-Grade Security:** All passwords are encrypted on the client side using AES-256-GCM before reaching the database.
+* **Automated Dispute Resolution:** A dedicated Admin Dashboard to manage disputes, contact hosts via WhatsApp, and process one-click refunds.
+* **Automated Email Notifications:** Integrated with Resend API for instant alerts on refunds, payouts, and dispute updates.
+* **Beautiful UI/UX:** Built with Next.js, Tailwind CSS, and smooth GSAP animations.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### 💻 Tech Stack
+* **Frontend:** Next.js (React), Tailwind CSS, GSAP, Lucide Icons
+* **Backend:** Supabase (PostgreSQL, Auth, Row Level Security)
+* **Payments & Escrow:** Paystack Subscription & Transfers API
+* **Emails:** Resend API
