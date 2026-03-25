@@ -1,8 +1,7 @@
 // src/components/marketplace/PoolCard.tsx
 import { Database } from '@/types/supabase'
 import { Button } from '@/components/ui/Button'
-// 🔥 Added new Lucide icons for services that don't have SimpleIcons
-import { Users, Component, Tv, PlaySquare, Bot } from 'lucide-react'
+import { Users, Component, Tv, PlaySquare, Bot, Film } from 'lucide-react'
 import Link from 'next/link'
 
 type Pool = Database['public']['Tables']['pools']['Row']
@@ -27,9 +26,9 @@ type IconData = {
 const getIconData = (name: string): IconData => {
   const n = name.toLowerCase()
   if (n.includes('netflix'))                           return { url: 'https://cdn.simpleicons.org/netflix/E50914',        bg: 'rgba(229,9,20,0.12)',     border: 'rgba(229,9,20,0.2)' }
-  // 🔥 Fixed Prime Video by using the reliable 'amazon' slug
-  if (n.includes('prime'))                             return { url: 'https://cdn.simpleicons.org/amazon/00A8E1',         bg: 'rgba(0,168,225,0.12)',    border: 'rgba(0,168,225,0.2)' }
-  // 🔥 Added custom Lucide fallbacks for DSTV and Showmax
+  
+  // 🔥 NO MORE EXTERNAL LINKS FOR THESE. Guaranteed to render locally!
+  if (n.includes('prime'))                             return { url: null, svgIcon: 'film',                               bg: 'rgba(0,168,225,0.12)',    border: 'rgba(0,168,225,0.2)', labelColor: '#00a8e1' }
   if (n.includes('dstv'))                              return { url: null, svgIcon: 'tv',                                 bg: 'rgba(0,152,219,0.12)',    border: 'rgba(0,152,219,0.2)', labelColor: '#0098db' }
   if (n.includes('showmax'))                           return { url: null, svgIcon: 'play',                               bg: 'rgba(216,25,33,0.12)',    border: 'rgba(216,25,33,0.2)', labelColor: '#d81921' }
   
@@ -87,7 +86,6 @@ export function PoolCard({ pool }: { pool: Pool }) {
           className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
           style={{ background: icon.bg, border: `1px solid ${icon.border}` }}
         >
-          {/* 🔥 This rendering logic handles all our new custom fallbacks */}
           {icon.url ? (
             <img src={icon.url} alt={pool.service_name} className="w-6 h-6" />
           ) : icon.svgIcon === 'openai' ? (
@@ -98,6 +96,8 @@ export function PoolCard({ pool }: { pool: Pool }) {
             <PlaySquare size={20} style={{ color: icon.labelColor }} />
           ) : icon.svgIcon === 'bot' ? (
             <Bot size={20} style={{ color: icon.labelColor }} />
+          ) : icon.svgIcon === 'film' ? (
+            <Film size={20} style={{ color: icon.labelColor }} />
           ) : icon.label ? (
             <span className="text-[11px] font-black" style={{ color: icon.labelColor || '#D4AF37' }}>
               {icon.label}
