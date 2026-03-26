@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Wallet, Users, ArrowRight, Settings, PlusCircle, CreditCard } from 'lucide-react'
-import WithdrawButton from './WithdrawButton' // 🔥 Fixed Import
+import WithdrawButton from './WithdrawButton'
 import { EscrowTimer } from '@/components/ui/EscrowTimer'
 
 export default async function DashboardPage() {
@@ -20,7 +20,6 @@ export default async function DashboardPage() {
     .eq('id', user.id)
     .single()
     
-  // 🔥 Explicitly tell TypeScript what a profile looks like
   const profile = data as { email: string; balance: number } | null
 
   // 3. Get Pools where user is Host
@@ -82,7 +81,6 @@ export default async function DashboardPage() {
               </div>
               
               <div className="flex gap-4">
-                {/* 🔥 Fixed Prop Name to match the component */}
                 <WithdrawButton activeEarnings={profile?.balance || 0} />
                 
                 <Link href="/create-pool">
@@ -154,7 +152,6 @@ export default async function DashboardPage() {
             <div className="space-y-4">
               {myMemberships && myMemberships.length > 0 ? (
                 myMemberships.map((membership: any) => {
-                  // 🔥 Calculate 48 hours from the joined date for the escrow timer
                   const joinedDate = new Date(membership.joined_at).getTime()
                   const expiresAtIso = new Date(joinedDate + 48 * 60 * 60 * 1000).toISOString()
 
@@ -169,7 +166,6 @@ export default async function DashboardPage() {
                         {membership.escrow_status === 'held' && (
                           <div className="text-right flex flex-col items-end">
                             <div className="text-[10px] text-fintech-gold uppercase tracking-wider font-bold mb-1">Escrow Timer</div>
-                            {/* 🔥 Fixed Props to match the component */}
                             <EscrowTimer expiresAt={expiresAtIso} />
                           </div>
                         )}
