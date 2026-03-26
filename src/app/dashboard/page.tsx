@@ -45,7 +45,8 @@ export default function DashboardPage() {
       supabase.from('payouts').select('*').eq('user_id', user.id).order('created_at', { ascending: false })
     ])
 
-    setProfile(profileRes.data as { email: string; balance: number })
+    // 🔥 Fixed TypeScript error here
+    setProfile(profileRes.data as { email: string; balance: number } | null)
     setMyPools(poolsRes.data || [])
     setMyMemberships(membershipsRes.data || [])
     setPayouts(payoutsRes.data || [])
@@ -273,7 +274,7 @@ export default function DashboardPage() {
                           </Link>
                         </div>
 
-                        {/* 🔥 RESTORED EDIT VAULT FEATURE */}
+                        {/* RESTORED EDIT VAULT FEATURE */}
                         {!isUpdating ? (
                           <button 
                             onClick={() => setUpdatingPoolId(pool.id)}
