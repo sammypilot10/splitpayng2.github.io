@@ -5,68 +5,81 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { AppNavbar } from '@/components/layout/AppNavbar'
 import { Button } from '@/components/ui/Button'
-import { ShieldCheck, Lock, AlertCircle, Loader2 } from 'lucide-react'
+import { ShieldCheck, Lock, AlertCircle, Loader2, Users, Ban } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 export default function PoolDetailsPage() {
   const params = useParams()
-  const id = params.id as string // Force TypeScript to recognize this as a string
-  
+  const id = params.id as string
+
   const supabase = createClient()
   const [pool, setPool] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [isProcessing, setIsProcessing] = useState(false)
+  const [isHost, setIsHost] = useState(false)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
 
   useEffect(() => {
-    const fetchPool = async () => {
+    const fetchData = async () => {
       if (!id) return
-      
-      // Fetch the pool. If id is invalid, data will be null.
-      const { data } = await supabase.from('pools').select('*').eq('id', id).single()
-      if (data) setPool(data)
+
+      // Fetch pool + current user in parallel
+      const [poolRes, userRes] = await Promise.all([
+        supabase.from('pools').select('*').eq('id', id).single() as any,
+        supabase.auth.getUser()
+      ])
+
+      if (poolRes.data) {
+        setPool(poolRes.data)
+        const user = userRes.data?.user
+        if (user) {
+          setCurrentUserId(user.id)
+          setIsHost(poolRes.data.host_id === user.id)
+        }
+      }
       setLoading(false)
     }
-    fetchPool()
+    fetchData()
   }, [id])
+
+  const isFull = pool ? pool.current_seats >= pool.max_seats : false
+  const slotsRemaining = pool ? pool.max_seats - pool.current_seats : 0
 
   const handleJoin = async () => {
     setIsProcessing(true)
     try {
-      // 1. 🔥 STRICT AUTH CHECK: Force a live check, ignore stale cache
       const { data: { user }, error } = await supabase.auth.getUser()
-      
+
       if (!user || error) {
         window.location.href = `/auth?message=Please log in to join this pool&returnTo=/pools/${pool.id}`
         return
       }
 
-      // 2. PROCEED TO CHECKOUT
       const res = await fetch('/api/memberships/join', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ poolId: pool.id, amount: pool.price_per_seat })
       })
-      
+
       const data = await res.json()
-      
+
       if (!res.ok || data.error) {
         throw new Error(data.error || 'Checkout initialization failed.')
       }
-      
-      // Redirect strictly to Paystack's secure hosted checkout
+
       if (data.authorization_url) {
         window.location.href = data.authorization_url
       } else {
         throw new Error('Payment gateway did not return a valid checkout link.')
       }
-      
+
     } catch (err: any) {
       alert("Checkout failed: " + err.message)
       setIsProcessing(false)
     }
   }
 
-  // 1. Loading State
+  // Loading State
   if (loading) {
     return (
       <div className="min-h-screen bg-fintech-slate flex flex-col">
@@ -79,7 +92,7 @@ export default function PoolDetailsPage() {
     )
   }
 
-  // 2. Not Found State
+  // Not Found State
   if (!pool) {
     return (
       <div className="min-h-screen bg-fintech-slate flex flex-col">
@@ -94,7 +107,6 @@ export default function PoolDetailsPage() {
     )
   }
 
-  // 3. Success State
   return (
     <div className="min-h-screen bg-fintech-slate flex flex-col">
       <AppNavbar userRole="member" />
@@ -113,6 +125,24 @@ export default function PoolDetailsPage() {
               <span className="text-sm font-medium text-gray-500">Monthly Seat Price</span>
               <span className="text-xl font-bold text-fintech-navy">₦{pool.price_per_seat.toLocaleString()}</span>
             </div>
+
+            {/* 🔥 Slot Counter */}
+            <div className="flex justify-between items-center mb-4">
+              <span className="text-sm font-medium text-gray-500 flex items-center gap-1.5">
+                <Users size={14} /> Seats
+              </span>
+              <span className="text-sm font-bold text-fintech-navy">
+                {pool.current_seats} / {pool.max_seats}
+                <span className={`ml-2 text-xs font-bold px-2 py-0.5 rounded-full ${
+                  isFull 
+                    ? 'bg-red-100 text-red-600' 
+                    : 'bg-green-100 text-green-600'
+                }`}>
+                  {isFull ? 'FULL' : `${slotsRemaining} left`}
+                </span>
+              </span>
+            </div>
+
             <hr className="border-gray-200 mb-4" />
             <div className="flex items-start gap-3 text-xs text-green-700 bg-green-50 p-3 rounded-lg">
               <ShieldCheck size={16} className="flex-shrink-0 mt-0.5" />
@@ -120,17 +150,34 @@ export default function PoolDetailsPage() {
             </div>
           </div>
 
-          <Button 
-            onClick={handleJoin} 
-            disabled={isProcessing}
-            className="w-full py-6 text-lg bg-fintech-navy hover:bg-fintech-navy/90 text-white shadow-xl flex justify-center items-center font-bold transition-all disabled:opacity-50"
-          >
-            {isProcessing ? (
-              <><Loader2 className="animate-spin mr-2" size={20} /> Securing Seat...</>
-            ) : (
-              `Pay ₦${pool.price_per_seat.toLocaleString()} to Join`
-            )}
-          </Button>
+          {/* 🔥 HOST SELF-JOIN GUARD + FULL POOL GUARD */}
+          {isHost ? (
+            <div className="w-full py-4 rounded-xl bg-gray-100 border border-gray-200 text-center">
+              <div className="flex items-center justify-center gap-2 text-gray-500 font-bold text-sm">
+                <Ban size={16} /> You created this pool
+              </div>
+              <p className="text-xs text-gray-400 mt-1">Pool creators cannot join their own pool.</p>
+            </div>
+          ) : isFull ? (
+            <button
+              disabled
+              className="w-full py-6 rounded-xl text-lg font-bold bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
+            >
+              Pool Full — No Seats Available
+            </button>
+          ) : (
+            <Button 
+              onClick={handleJoin} 
+              disabled={isProcessing}
+              className="w-full py-6 text-lg bg-fintech-navy hover:bg-fintech-navy/90 text-white shadow-xl flex justify-center items-center font-bold transition-all disabled:opacity-50"
+            >
+              {isProcessing ? (
+                <><Loader2 className="animate-spin mr-2" size={20} /> Securing Seat...</>
+              ) : (
+                `Pay ₦${pool.price_per_seat.toLocaleString()} to Join`
+              )}
+            </Button>
+          )}
         </div>
       </main>
     </div>

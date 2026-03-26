@@ -1,4 +1,5 @@
 // src/app/create-pool/page.tsx
+import { redirect } from 'next/navigation'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { CreatePoolWizard } from '@/components/pools/CreatePoolWizard'
 import { AppNavbar } from '@/components/layout/AppNavbar'
@@ -8,6 +9,18 @@ export default async function CreatePoolPage() {
   // Fetch user securely on the server
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
+
+  // 🔥 MANDATORY PAYOUT ACCOUNT GUARD
+  if (user) {
+    const { data: profile } = await (supabase.from('profiles') as any)
+      .select('account_number, bank_code')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile?.account_number || !profile?.bank_code) {
+      redirect('/dashboard/settings?message=Please set up your payout account before creating a pool')
+    }
+  }
 
   return (
     <ProtectedRoute allowedRoles={['host', 'admin']}>

@@ -14,8 +14,9 @@ interface AppNavbarProps {
 export function AppNavbar({ userRole }: AppNavbarProps) {
   const pathname = usePathname()
   const supabase = createClient()
-  const [isAdmin, setIsAdmin] = useState(false)
   const [userEmail, setUserEmail] = useState<string | null>(null)
+  const [isAdmin, setIsAdmin] = useState(false)
+  const [userRoleDb, setUserRoleDb] = useState<string>(userRole || 'member')
   const [isLoading, setIsLoading] = useState(true)
   
   // State to control the mobile menu
@@ -40,8 +41,9 @@ export function AppNavbar({ userRole }: AppNavbarProps) {
 
       const profile = data as { role: string } | null
 
-      if (profile?.role === 'admin') {
-        setIsAdmin(true)
+      if (profile?.role) {
+        setUserRoleDb(profile.role)
+        if (profile.role === 'admin') setIsAdmin(true)
       }
       setIsLoading(false)
     }
@@ -81,6 +83,7 @@ export function AppNavbar({ userRole }: AppNavbarProps) {
 
           {userEmail && (
             <>
+              {(userRoleDb === 'member' || isAdmin) && (
               <Link 
                 href="/dashboard/subscriptions" 
                 className={`text-sm font-medium flex items-center gap-2 transition-colors ${
@@ -89,7 +92,9 @@ export function AppNavbar({ userRole }: AppNavbarProps) {
               >
                 <Key size={16} /> My Subscriptions
               </Link>
+              )}
               
+              {(userRoleDb === 'host' || isAdmin) && (
               <Link 
                 href="/dashboard" 
                 className={`text-sm font-medium flex items-center gap-2 transition-colors ${
@@ -98,6 +103,7 @@ export function AppNavbar({ userRole }: AppNavbarProps) {
               >
                 <LayoutDashboard size={16} /> Host Dashboard
               </Link>
+              )}
             </>
           )}
 
@@ -183,13 +189,17 @@ export function AppNavbar({ userRole }: AppNavbarProps) {
 
           {userEmail && (
             <>
+              {(userRoleDb === 'member' || isAdmin) && (
               <Link href="/dashboard/subscriptions" onClick={() => setIsMobileMenuOpen(false)} className={`text-base font-medium flex items-center gap-2 ${pathname === '/dashboard/subscriptions' ? 'text-[#C9A84C]' : 'text-gray-300'}`}>
                 <Key size={18} /> My Subscriptions
               </Link>
+              )}
               
+              {(userRoleDb === 'host' || isAdmin) && (
               <Link href="/dashboard" onClick={() => setIsMobileMenuOpen(false)} className={`text-base font-medium flex items-center gap-2 ${pathname === '/dashboard' ? 'text-[#C9A84C]' : 'text-gray-300'}`}>
                 <LayoutDashboard size={18} /> Host Dashboard
               </Link>
+              )}
               
               <Link href="/create-pool" onClick={() => setIsMobileMenuOpen(false)} className="text-base font-medium flex items-center gap-2 text-gray-300">
                 <Plus size={18} /> Create Pool

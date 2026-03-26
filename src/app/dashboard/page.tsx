@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
-import { Wallet, Users, ArrowRight, Settings, PlusCircle, CreditCard, Key, Edit3, X, Loader2 } from 'lucide-react'
+import { Wallet, Users, ArrowRight, Settings, PlusCircle, CreditCard, Key, Edit3, X, Loader2, Building2, CheckCircle2, Link2, Copy, RefreshCw } from 'lucide-react'
 import WithdrawButton from './WithdrawButton'
 import { EscrowTimer } from '@/components/ui/EscrowTimer'
 import { AppNavbar } from '@/components/layout/AppNavbar'
@@ -16,7 +16,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   
   // Data States
-  const [profile, setProfile] = useState<{ email: string; balance: number } | null>(null)
+  const [profile, setProfile] = useState<any>(null)
   const [myPools, setMyPools] = useState<any[]>([])
   const [myMemberships, setMyMemberships] = useState<any[]>([])
   const [payouts, setPayouts] = useState<any[]>([])
@@ -45,8 +45,7 @@ export default function DashboardPage() {
       supabase.from('payouts').select('*').eq('user_id', user.id).order('created_at', { ascending: false })
     ])
 
-    // 🔥 Fixed TypeScript error here
-    setProfile(profileRes.data as { email: string; balance: number } | null)
+    setProfile(profileRes.data as any)
     setMyPools(poolsRes.data || [])
     setMyMemberships(membershipsRes.data || [])
     setPayouts(payoutsRes.data || [])
@@ -55,36 +54,54 @@ export default function DashboardPage() {
 
   // Handle Vault Update Logic
   const handleUpdateCredentials = async (poolId: string) => {
-    if (!updateForm.username || !updateForm.password) {
-      alert("Please enter both the login email and password.")
+    if (!poolId || !updateForm.username || !updateForm.password) {
+      alert("Please fill both username and password.")
       return
     }
-
+    
     setIsEncrypting(true)
     try {
-      const rawString = JSON.stringify(updateForm)
-      const cryptoResult = await encryptData(rawString) as any
-      const encryptedData = cryptoResult.encryptedData || cryptoResult.ciphertext || cryptoResult
-      const iv = cryptoResult.iv || ''
+      const payload = JSON.stringify(updateForm)
+      const { encryptedData, iv } = await encryptData(payload)
 
-      const res = await fetch('/api/credentials/update', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ poolId, encryptedData, iv })
-      })
+      const { error } = await (supabase.from('pool_credentials') as any)
+        .update({ encrypted_data: encryptedData, iv: iv })
+        .eq('pool_id', poolId)
 
-      if (!res.ok) throw new Error("Failed to update credentials in database.")
+      if (error) throw error
 
-      alert("Vault Updated Successfully! Your members will now see the new password.")
+      alert("Vault credentials updated successfully. Existing members can access them immediately.")
       setUpdatingPoolId(null)
       setUpdateForm({ username: '', password: '' })
-      fetchDashboardData() // Refresh dashboard data to reflect the update
+      fetchDashboardData()
     } catch (err: any) {
-      alert("Error updating vault: " + err.message)
+      alert("Failed to update vault: " + err.message)
     } finally {
       setIsEncrypting(false)
     }
   }
+
+  const regenerateInviteLink = async (poolId: string) => {
+    try {
+      const res = await fetch('/api/pools/invite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ poolId })
+      })
+      const data = await res.json()
+      if (data.invite_token) {
+        setMyPools(myPools.map(p => p.id === poolId ? { ...p, invite_token: data.invite_token } : p))
+        alert('Invite link regenerated successfully!')
+      } else {
+        throw new Error(data.error || 'Failed to regenerate link')
+      }
+    } catch (err: any) {
+      alert(err.message)
+    }
+  }
+
+  const isHost = profile?.role === 'host' || profile?.role === 'admin'
+  const isMember = profile?.role === 'member' || profile?.role === 'admin'
 
   if (loading) {
     return (
@@ -98,27 +115,24 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-[#05080F]">
       <AppNavbar />
-
-      <div className="max-w-7xl mx-auto px-6 py-12">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
-          <div>
-            <h1 className="text-3xl font-black text-white tracking-tight mb-2">Welcome back!</h1>
-            <p className="text-fintech-slate/70">{profile?.email}</p>
-          </div>
-          <Link href="/dashboard/settings">
-            <button className="px-5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white font-medium hover:bg-white/10 transition-colors flex items-center gap-2">
-              <Settings size={18} /> Settings
-            </button>
-          </Link>
+      <main className="flex-grow max-w-7xl mx-auto w-full px-6 py-12">
+        <div className="mb-10">
+          <h1 className="text-3xl font-bold text-white tracking-tight">
+            Welcome back, <span className="text-fintech-gold">{profile?.email?.split('@')[0]}</span>
+          </h1>
+          <p className="text-white/50 mt-2">Manage your shared subscriptions and earnings securely.</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
-          {/* LEFT COLUMN */}
+          {/* LEFT COLUMN: HOST ONLY OR SHARED? 
+              - Wallet and Withdraw is for Host 
+              - Subscriptions is for Member
+          */}
           <div className="lg:col-span-2 space-y-8">
             
-            {/* Balance Card */}
+            {/* Balance Card (HOST ONLY) */}
+            {isHost && (
             <div className="p-8 rounded-3xl bg-gradient-to-br from-fintech-navy to-[#0a1224] border border-white/10 relative overflow-hidden">
               <div className="absolute top-0 right-0 w-64 h-64 bg-fintech-gold/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
               
@@ -143,8 +157,10 @@ export default function DashboardPage() {
                 </div>
               </div>
             </div>
+            )}
 
             {/* Withdrawal History */}
+            {isHost && (
             <div>
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold text-white flex items-center gap-2">
@@ -191,11 +207,13 @@ export default function DashboardPage() {
                 )}
               </div>
             </div>
+            )}
 
-            {/* Joined Pools (Member) */}
+            {/* My Current Subscriptions (MEMBER ONLY) */}
+            {isMember && (
             <div>
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-white">Joined Pools (Member)</h2>
+                <h2 className="text-xl font-bold text-white">My Current Subscriptions</h2>
                 <Link href="/browse" className="text-sm font-medium text-fintech-gold hover:underline">
                   Browse Marketplace →
                 </Link>
@@ -232,21 +250,64 @@ export default function DashboardPage() {
                     )
                   })
                 ) : (
-                  <div className="p-8 rounded-2xl bg-white/5 border border-white/10 text-center">
-                    <p className="text-fintech-slate/50 mb-4">You haven't joined any pools yet.</p>
+                  <div className="text-center py-8">
+                    <p className="text-white/30 text-sm mb-4">You have no active subscriptions.</p>
                     <Link href="/browse">
-                      <button className="px-5 py-2 rounded-lg bg-white/10 text-white font-medium hover:bg-white/20 transition-colors">
-                        Explore Marketplace
+                      <button className="px-6 py-2 rounded-xl bg-white/5 text-fintech-gold font-bold hover:bg-white/10 transition-colors">
+                        Browse Marketplace
                       </button>
                     </Link>
                   </div>
                 )}
               </div>
             </div>
+            )}
           </div>
 
-          {/* RIGHT COLUMN */}
+          {/* RIGHT COLUMN (HOST ONLY) */}
+          {isHost && (
           <div className="space-y-8">
+
+            {/* 🔥 Payout Account Section */}
+            <div className="p-5 rounded-2xl bg-white/5 border border-white/10">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                  <Building2 className="text-fintech-gold" size={18} /> Payout Account
+                </h2>
+                <Link href="/dashboard/settings">
+                  <button className="text-xs text-fintech-gold hover:underline font-medium">Edit</button>
+                </Link>
+              </div>
+              {profile?.account_number ? (
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-white/50">Bank</span>
+                    <span className="text-sm font-bold text-white">{profile.bank_name || 'N/A'}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-white/50">Account</span>
+                    <span className="text-sm font-bold text-white font-mono">****{profile.account_number?.slice(-4)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-white/50">Name</span>
+                    <span className="text-sm font-bold text-white">{profile.account_name || 'N/A'}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-green-400 bg-green-500/10 px-3 py-1.5 rounded-full w-fit">
+                    <CheckCircle2 size={12} /> Verified
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-4">
+                  <p className="text-white/40 text-sm mb-3">No bank account linked yet.</p>
+                  <Link href="/dashboard/settings">
+                    <button className="px-4 py-2 rounded-lg bg-fintech-gold text-[#05080F] font-bold text-sm hover:scale-105 transition-transform">
+                      Link Bank Account
+                    </button>
+                  </Link>
+                </div>
+              )}
+            </div>
+
             {/* Hosted Pools */}
             <div>
               <div className="flex items-center justify-between mb-6">
@@ -274,6 +335,37 @@ export default function DashboardPage() {
                             View <ArrowRight size={14} />
                           </Link>
                         </div>
+
+                        {/* PRIVATE POOL INVITE LINK */}
+                        {!pool.is_public && pool.invite_token && (
+                          <div className="mt-2 mb-4 p-3 rounded-xl bg-white/5 border border-white/10 text-xs">
+                            <div className="flex justify-between items-center text-white/50 mb-2 font-bold uppercase tracking-wider">
+                              <span className="flex items-center gap-1.5"><Link2 size={12}/> Invite Link</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <code className="flex-1 truncate bg-[#05080F] border border-white/10 px-2 py-1.5 rounded text-fintech-gold">
+                                {window.location.origin}/pools/join?token={pool.invite_token}
+                              </code>
+                              <button 
+                                onClick={() => {
+                                  navigator.clipboard.writeText(`${window.location.origin}/pools/join?token=${pool.invite_token}`)
+                                  alert('Copied to clipboard!')
+                                }}
+                                className="p-1.5 bg-white/5 hover:bg-white/10 rounded text-white"
+                                title="Copy Link"
+                              >
+                                <Copy size={14} />
+                              </button>
+                              <button 
+                                onClick={() => regenerateInviteLink(pool.id)}
+                                className="p-1.5 bg-white/5 hover:bg-white/10 rounded text-white"
+                                title="Regenerate Link"
+                              >
+                                <RefreshCw size={14} />
+                              </button>
+                            </div>
+                          </div>
+                        )}
 
                         {/* RESTORED EDIT VAULT FEATURE */}
                         {!isUpdating ? (
@@ -329,8 +421,9 @@ export default function DashboardPage() {
               </div>
             </div>
           </div>
+          )}
         </div>
-      </div>
+      </main>
     </div>
   )
 }

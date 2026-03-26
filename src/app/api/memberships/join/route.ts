@@ -25,7 +25,41 @@ export async function POST(req: Request) {
     const { poolId, amount } = body
     console.log("📦 PAYLOAD RECEIVED: Pool ID:", poolId, "| Amount: ₦", amount)
 
-    // 3. Check Paystack Environment Variables
+    // 3. 🔥 HOST SELF-JOIN PREVENTION + POOL VALIDATION
+    const { data: poolRaw } = await supabase.from('pools').select('*').eq('id', poolId).single()
+    const poolData = poolRaw as any
+    
+    if (!poolData) {
+      return NextResponse.json({ error: 'Pool not found.' }, { status: 404 })
+    }
+
+    if (poolData.host_id === user.id) {
+      console.log("❌ FAIL: Host attempted to join their own pool.")
+      return NextResponse.json({ error: 'Pool creators cannot join their own pool.' }, { status: 400 })
+    }
+
+    if (poolData.status !== 'active') {
+      return NextResponse.json({ error: 'This pool is no longer accepting members.' }, { status: 400 })
+    }
+
+    if (poolData.current_seats >= poolData.max_seats) {
+      return NextResponse.json({ error: 'This pool is full. No seats available.' }, { status: 400 })
+    }
+
+    // 4. 🔥 MANDATORY CARD GUARD: Check if member has a saved payment card
+    const { data: memberProfile } = await (supabase.from('profiles') as any)
+      .select('card_token, card_verified')
+      .eq('id', user.id)
+      .single()
+
+    if (!memberProfile?.card_token || !memberProfile?.card_verified) {
+      return NextResponse.json({ 
+        error: 'You must add a valid payment card before joining a pool.',
+        redirect: '/dashboard/cards'
+      }, { status: 403 })
+    }
+
+    // 5. Check Paystack Environment Variables
     const secretKey = process.env.PAYSTACK_SECRET_KEY
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
     

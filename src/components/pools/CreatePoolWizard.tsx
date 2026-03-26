@@ -8,7 +8,7 @@ import { Database } from '@/types/supabase'
 import { Button } from '@/components/ui/Button'
 import { MonetaryInput } from '@/components/ui/MonetaryInput'
 import { encryptData } from '@/lib/crypto'
-import { Shield, Lock, CheckCircle2 } from 'lucide-react'
+import { Shield, Lock, CheckCircle2, Copy } from 'lucide-react'
 
 type PoolInsert = Database['public']['Tables']['pools']['Insert']
 type CredentialsInsert = Database['public']['Tables']['pool_credentials']['Insert']
@@ -54,6 +54,7 @@ export function CreatePoolWizard({ hostId }: { hostId: string }) {
   const [isPublic, setIsPublic] = useState(true)
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
+  const [inviteLink, setInviteLink] = useState('')
 
   const handleServiceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selected = e.target.value
@@ -75,14 +76,15 @@ export function CreatePoolWizard({ hostId }: { hostId: string }) {
     
     setLoading(true)
     try {
-      const poolData: PoolInsert = {
+      const poolData: any = {
         host_id: hostId, // USE THE PROP DIRECTLY, BYPASSING CLIENT AUTH CHECK
         service_name: serviceName.trim(),
         category,
         price_per_seat: price,
         max_seats: maxSeats,
         is_public: isPublic,
-        status: 'active'
+        status: 'active',
+        invite_token: !isPublic ? Array.from(crypto.getRandomValues(new Uint8Array(32)), byte => byte.toString(16).padStart(2, '0')).join('') : null
       }
 
       const { data, error: poolError } = await supabase
@@ -111,7 +113,12 @@ export function CreatePoolWizard({ hostId }: { hostId: string }) {
 
       if (credError) throw credError
 
-      router.push('/dashboard?success=true')
+      if (!isPublic && poolData.invite_token) {
+        setInviteLink(`${window.location.origin}/pools/join?token=${poolData.invite_token}`)
+        setStep(4)
+      } else {
+        router.push('/dashboard?success=true')
+      }
     } catch (error: any) {
       alert(error.message)
       setLoading(false)
@@ -210,6 +217,36 @@ export function CreatePoolWizard({ hostId }: { hostId: string }) {
               Encrypt & Create Pool
             </Button>
           </div>
+        </div>
+      )}
+
+      {step === 4 && (
+        <div className="space-y-6 animate-in fade-in slide-in-from-right-4 text-center">
+          <div className="flex justify-center mb-4">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center text-green-600">
+              <CheckCircle2 size={32} />
+            </div>
+          </div>
+          <h2 className="text-2xl font-bold text-fintech-navy">Pool Created Successfully!</h2>
+          <p className="text-gray-500">Your private pool is ready. Share this invite link with people you want to join.</p>
+          
+          <div className="bg-gray-50 border border-gray-200 p-4 rounded-xl flex items-center justify-between gap-4 mt-6">
+            <code className="text-sm font-bold text-fintech-navy truncate flex-1 text-left">{inviteLink}</code>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                navigator.clipboard.writeText(inviteLink)
+                alert('Copied to clipboard!')
+              }}
+              className="shrink-0 flex items-center gap-2 text-sm"
+            >
+              <Copy size={16} /> Copy
+            </Button>
+          </div>
+
+          <Button onClick={() => router.push('/dashboard')} className="w-full py-4 mt-8 bg-fintech-navy text-white">
+            Go to Dashboard
+          </Button>
         </div>
       )}
     </div>

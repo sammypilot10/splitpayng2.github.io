@@ -17,11 +17,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // 2. Find all active members whose next billing date is today or earlier
+  // 2. Find all active and past_due members whose next billing date is today or earlier
+  // Also only select those where retry_count < 3
   const { data: dueMembers } = await supabase
     .from('pool_members')
     .select('*, pools(service_name, price_per_seat), profiles(email)')
-    .eq('status', 'active')
+    .in('status', ['active', 'past_due'])
+    .lt('retry_count', 3)
     .lte('next_billing_date', new Date().toISOString())
 
   if (!dueMembers || dueMembers.length === 0) {
@@ -41,19 +43,39 @@ export async function POST(req: Request) {
       )
 
       if (chargeResult.status && chargeResult.data?.status === 'success') {
-        // Update next billing date (+30 days)
+        // Update next billing date (+30 days), reset retry count and status
         const nextDate = new Date()
         nextDate.setDate(nextDate.getDate() + 30)
         
         await supabase
           .from('pool_members')
-          .update({ next_billing_date: nextDate.toISOString() })
+          .update({ 
+            next_billing_date: nextDate.toISOString(),
+            status: 'active',
+            retry_count: 0
+          })
           .eq('id', member.id)
 
         results.push({ id: member.id, status: 'success' })
       } else {
+        const nextRetryCount = (member.retry_count || 0) + 1
+        const nextStatus = nextRetryCount >= 3 ? 'cancelled' : 'past_due'
+        
+        // Add 24 hours to next_billing_date for the next retry interval
+        const retryDate = new Date()
+        retryDate.setDate(retryDate.getDate() + 1)
+
+        await supabase
+          .from('pool_members')
+          .update({
+             retry_count: nextRetryCount,
+             status: nextStatus,
+             next_billing_date: nextStatus === 'cancelled' ? member.next_billing_date : retryDate.toISOString()
+          })
+          .eq('id', member.id)
+
         await handleFailedCharge(member.id, member.profiles.email, member.pools.service_name)
-        results.push({ id: member.id, status: 'failed' })
+        results.push({ id: member.id, status: 'failed', retry_count: nextRetryCount })
       }
     } catch (error) {
       await handleFailedCharge(member.id, member.profiles.email, member.pools.service_name)
