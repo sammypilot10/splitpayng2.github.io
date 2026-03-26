@@ -63,7 +63,7 @@ export async function POST(req: Request) {
     const { data: member } = await supabaseAdmin.from('pool_members').select('*').eq('id', memberId).single()
     if (!member) throw new Error("Member not found")
     
-    const { data: memberProfile } = await supabaseAdmin.from('profiles').select('email').eq('id', member.user_id).single()
+    const { data: memberProfile } = await supabaseAdmin.from('profiles').select('email').eq('id', member.member_id).single()
     const { data: pool } = await supabaseAdmin.from('pools').select('*').eq('id', member.pool_id).single()
     const { data: hostProfile } = await supabaseAdmin.from('profiles').select('email').eq('id', pool?.host_id).single()
 

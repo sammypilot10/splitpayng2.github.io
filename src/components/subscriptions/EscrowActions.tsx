@@ -45,7 +45,7 @@ export function EscrowActions({ membershipId, onUpdate }: EscrowActionsProps) {
       <Button 
         onClick={handleConfirm} 
         disabled={loading !== null}
-        className="w-1/2 bg-teal-600 hover:bg-teal-700 text-white"
+        className="w-1/2 bg-teal-500/20 hover:bg-teal-500/30 text-teal-400 border border-teal-500/30"
       >
         {loading === 'confirm' ? <Loader2 className="animate-spin" size={16} /> : <><CheckCircle2 size={16} className="mr-2"/> Confirm Access</>}
       </Button>
@@ -53,7 +53,7 @@ export function EscrowActions({ membershipId, onUpdate }: EscrowActionsProps) {
         variant="ghost" 
         onClick={handleDispute} 
         disabled={loading !== null}
-        className="w-1/2 text-red-500 hover:bg-red-50 hover:text-red-600 border border-red-100"
+        className="w-1/2 text-red-400 hover:bg-red-500/10 hover:text-red-300 border border-red-500/20"
       >
         {loading === 'dispute' ? <Loader2 className="animate-spin" size={16} /> : <><ShieldAlert size={16} className="mr-2"/> Dispute</>}
       </Button>

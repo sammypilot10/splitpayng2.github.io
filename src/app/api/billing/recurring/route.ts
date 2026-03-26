@@ -40,7 +40,7 @@ export async function POST(req: Request) {
         member.paystack_auth_code
       )
 
-      if (chargeResult.status === 'success') {
+      if (chargeResult.status && chargeResult.data?.status === 'success') {
         // Update next billing date (+30 days)
         const nextDate = new Date()
         nextDate.setDate(nextDate.getDate() + 30)

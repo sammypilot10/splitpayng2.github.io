@@ -21,7 +21,9 @@ export default function WithdrawButton({ activeEarnings }: { activeEarnings: num
 
       if (!res.ok) throw new Error(data.error || 'Failed to process withdrawal')
 
-      setSuccessMessage(`Success! ₦${activeEarnings.toLocaleString()} is on the way to your bank.`)
+      // Use server-returned amount if available, fallback to prop
+      const amount = data.amount || activeEarnings
+      setSuccessMessage(`Success! ₦${amount.toLocaleString()} is on the way to your bank.`)
 
     } catch (err: any) {
       alert("🚨 Transfer Failed: " + err.message)
@@ -32,7 +34,7 @@ export default function WithdrawButton({ activeEarnings }: { activeEarnings: num
 
   if (successMessage) {
     return (
-      <div className="flex items-center gap-2 text-green-700 font-bold bg-green-50 border border-green-200 px-4 py-3 rounded-xl w-full sm:w-auto">
+      <div className="flex items-center gap-2 text-green-400 font-bold bg-green-500/10 border border-green-500/20 px-4 py-3 rounded-xl w-full sm:w-auto">
         <CheckCircle2 size={18} /> {successMessage}
       </div>
     )

@@ -41,7 +41,7 @@ export default function DashboardPage() {
     const [profileRes, poolsRes, membershipsRes, payoutsRes] = await Promise.all([
       supabase.from('profiles').select('*').eq('id', user.id).single(),
       supabase.from('pools').select('*').eq('host_id', user.id).order('created_at', { ascending: false }),
-      supabase.from('pool_members').select('*, pools(*)').eq('user_id', user.id).order('joined_at', { ascending: false }),
+      supabase.from('pool_members').select('*, pools(*)').eq('member_id', user.id).order('joined_at', { ascending: false }),
       supabase.from('payouts').select('*').eq('user_id', user.id).order('created_at', { ascending: false })
     ])
 
@@ -78,6 +78,7 @@ export default function DashboardPage() {
       alert("Vault Updated Successfully! Your members will now see the new password.")
       setUpdatingPoolId(null)
       setUpdateForm({ username: '', password: '' })
+      fetchDashboardData() // Refresh dashboard data to reflect the update
     } catch (err: any) {
       alert("Error updating vault: " + err.message)
     } finally {
@@ -214,7 +215,7 @@ export default function DashboardPage() {
                         </div>
                         
                         <div className="flex items-center gap-4">
-                          {membership.escrow_status === 'held' && (
+                          {membership.escrow_status === 'pending' && (
                             <div className="text-right flex flex-col items-end">
                               <div className="text-[10px] text-fintech-gold uppercase tracking-wider font-bold mb-1">Escrow Timer</div>
                               <EscrowTimer expiresAt={expiresAtIso} />

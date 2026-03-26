@@ -12,26 +12,24 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // 2. Securely calculate their earnings on the server
-    const { data: poolsData } = await supabase
-      .from('pools')
-      .select('price_per_seat, current_seats')
-      .eq('host_id', user.id)
-
-    const pools = poolsData as any[] | null
-    const activeEarnings = pools?.reduce((acc, pool) => acc + (pool.price_per_seat * pool.current_seats * 0.8), 0) || 0
-
-    if (activeEarnings <= 0) {
-      return NextResponse.json({ error: 'No available funds to withdraw' }, { status: 400 })
-    }
-
-    // 3. Get the Host's saved bank details
+    // 2. Read the user's cleared balance from their profile
     const { data: profile } = await (supabase.from('profiles') as any)
       .select('*')
       .eq('id', user.id)
       .single()
 
-    if (!profile?.account_number || !profile?.bank_code) {
+    if (!profile) {
+      return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
+    }
+
+    const withdrawAmount = profile.balance || 0
+
+    if (withdrawAmount <= 0) {
+      return NextResponse.json({ error: 'No available funds to withdraw' }, { status: 400 })
+    }
+
+    // 3. Verify bank details are linked
+    if (!profile.account_number || !profile.bank_code) {
       return NextResponse.json({ error: 'Bank details not found. Please link your account first.' }, { status: 400 })
     }
 
@@ -39,11 +37,17 @@ export async function POST(request: Request) {
     if (profile.account_number === '0000000000') {
       // Simulate network delay to show the loading spinner
       await new Promise(resolve => setTimeout(resolve, 1500)) 
+
+      // Deduct balance even in test mode
+      await (supabase.from('profiles') as any)
+        .update({ balance: 0 })
+        .eq('id', user.id)
       
       return NextResponse.json({ 
         success: true, 
         message: 'TEST TRANSFER SUCCESSFUL!',
-        reference: 'mock_test_ref_12345'
+        reference: 'mock_test_ref_12345',
+        amount: withdrawAmount
       })
     }
 
@@ -83,7 +87,7 @@ export async function POST(request: Request) {
       },
       body: JSON.stringify({
         source: "balance",
-        amount: activeEarnings * 100, // Naira to Kobo
+        amount: withdrawAmount * 100, // Naira to Kobo
         recipient: recipientCode,
         reason: "SplitPayNG Earnings Withdrawal"
       })
@@ -94,10 +98,16 @@ export async function POST(request: Request) {
       throw new Error(transferData.message || "Failed to initiate transfer")
     }
 
+    // Step C: Deduct balance from profile after successful transfer initiation
+    await (supabase.from('profiles') as any)
+      .update({ balance: 0 })
+      .eq('id', user.id)
+
     return NextResponse.json({ 
       success: true, 
       message: 'Transfer initiated successfully!',
-      reference: transferData.data.reference
+      reference: transferData.data.reference,
+      amount: withdrawAmount
     })
 
   } catch (error: any) {

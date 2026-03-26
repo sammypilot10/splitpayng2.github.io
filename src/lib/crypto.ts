@@ -2,6 +2,24 @@
 // In a full zero-knowledge setup, this would use a user-derived Key Encryption Key (KEK).
 const ENCRYPTION_KEY = process.env.NEXT_PUBLIC_ENCRYPTION_KEY || 'splitpayng-32-byte-secure-key-12';
 
+// Browser-safe base64 encoding helpers (no Node.js Buffer dependency)
+function uint8ArrayToBase64(bytes: Uint8Array): string {
+  let binary = '';
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
+function base64ToUint8Array(base64: string): Uint8Array {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes;
+}
+
 async function getCryptoKey(): Promise<CryptoKey> {
   const enc = new TextEncoder();
   const keyMaterial = await crypto.subtle.importKey(
@@ -26,15 +44,15 @@ export async function encryptData(text: string): Promise<{ encryptedData: string
   );
 
   return {
-    encryptedData: Buffer.from(encrypted).toString('base64'),
-    iv: Buffer.from(iv).toString('base64')
+    encryptedData: uint8ArrayToBase64(new Uint8Array(encrypted)),
+    iv: uint8ArrayToBase64(iv)
   };
 }
 
 export async function decryptData(encryptedBase64: string, ivBase64: string): Promise<string> {
   const key = await getCryptoKey();
-  const iv = Buffer.from(ivBase64, 'base64');
-  const encryptedData = Buffer.from(encryptedBase64, 'base64');
+  const iv = base64ToUint8Array(ivBase64);
+  const encryptedData = base64ToUint8Array(encryptedBase64);
 
   const decrypted = await crypto.subtle.decrypt(
     { name: "AES-GCM", iv: new Uint8Array(iv) },

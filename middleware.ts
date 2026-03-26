@@ -35,7 +35,7 @@ export async function middleware(request: NextRequest) {
   const isAdmin = request.nextUrl.pathname.startsWith('/admin');
 
   if ((isProtected || isAdmin) && !user) {
-    return NextResponse.redirect(new URL('/login', request.url));
+    return NextResponse.redirect(new URL('/auth', request.url));
   }
 
   // Session Timeout Logic Stub (Client will handle the 2-min warning modal)
@@ -46,7 +46,7 @@ export async function middleware(request: NextRequest) {
     if (lastActive && now - parseInt(lastActive) > SESSION_TIMEOUT_MS) {
       // Force logout if inactive
       await supabase.auth.signOut();
-      response = NextResponse.redirect(new URL('/login?timeout=true', request.url));
+      response = NextResponse.redirect(new URL('/auth?timeout=true', request.url));
       response.cookies.delete('sp_last_active');
       return response;
     }

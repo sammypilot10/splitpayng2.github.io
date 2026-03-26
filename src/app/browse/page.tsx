@@ -14,6 +14,8 @@ export default async function BrowsePoolsPage() {
   const { data: poolsData } = await supabase
     .from('pools')
     .select('*')
+    .eq('is_public', true)
+    .eq('status', 'active')
     .order('created_at', { ascending: false })
 
   // 🔥 THE FIX: Tell TypeScript this is an array of objects
