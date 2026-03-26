@@ -1,55 +1,100 @@
 // src/app/dashboard/page.tsx
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
+'use client'
+
+import { useEffect, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
-import { Wallet, Users, ArrowRight, Settings, PlusCircle, CreditCard } from 'lucide-react'
+import { Wallet, Users, ArrowRight, Settings, PlusCircle, CreditCard, Key, Edit3, X, Loader2 } from 'lucide-react'
 import WithdrawButton from './WithdrawButton'
 import { EscrowTimer } from '@/components/ui/EscrowTimer'
-import { AppNavbar } from '@/components/layout/AppNavbar' // 🔥 Restored Navbar!
+import { AppNavbar } from '@/components/layout/AppNavbar'
+import { Button } from '@/components/ui/Button'
+import { encryptData } from '@/lib/crypto'
 
-export default async function DashboardPage() {
+export default function DashboardPage() {
   const supabase = createClient()
+  const [loading, setLoading] = useState(true)
+  
+  // Data States
+  const [profile, setProfile] = useState<{ email: string; balance: number } | null>(null)
+  const [myPools, setMyPools] = useState<any[]>([])
+  const [myMemberships, setMyMemberships] = useState<any[]>([])
+  const [payouts, setPayouts] = useState<any[]>([])
 
-  // 1. Get User
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
-  if (authError || !user) redirect('/auth')
+  // Edit Vault States
+  const [updatingPoolId, setUpdatingPoolId] = useState<string | null>(null)
+  const [updateForm, setUpdateForm] = useState({ username: '', password: '' })
+  const [isEncrypting, setIsEncrypting] = useState(false)
 
-  // 2. Get Profile & Balance
-  const { data } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single()
-    
-  const profile = data as { email: string; balance: number } | null
+  useEffect(() => {
+    fetchDashboardData()
+  }, [])
 
-  // 3. Get Pools where user is Host
-  const { data: myPools } = await supabase
-    .from('pools')
-    .select('*')
-    .eq('host_id', user.id)
-    .order('created_at', { ascending: false })
+  const fetchDashboardData = async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      window.location.href = '/auth'
+      return
+    }
 
-  // 4. Get Memberships where user is Member
-  const { data: myMemberships } = await supabase
-    .from('pool_members')
-    .select(`
-      *,
-      pools (*)
-    `)
-    .eq('user_id', user.id)
-    .order('joined_at', { ascending: false })
+    // Fetch everything simultaneously for speed
+    const [profileRes, poolsRes, membershipsRes, payoutsRes] = await Promise.all([
+      supabase.from('profiles').select('*').eq('id', user.id).single(),
+      supabase.from('pools').select('*').eq('host_id', user.id).order('created_at', { ascending: false }),
+      supabase.from('pool_members').select('*, pools(*)').eq('user_id', user.id).order('joined_at', { ascending: false }),
+      supabase.from('payouts').select('*').eq('user_id', user.id).order('created_at', { ascending: false })
+    ])
 
-  // 5. Fetch their Payout/Withdrawal History
-  const { data: payouts } = await supabase
-    .from('payouts')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
+    setProfile(profileRes.data as { email: string; balance: number })
+    setMyPools(poolsRes.data || [])
+    setMyMemberships(membershipsRes.data || [])
+    setPayouts(payoutsRes.data || [])
+    setLoading(false)
+  }
+
+  // Handle Vault Update Logic
+  const handleUpdateCredentials = async (poolId: string) => {
+    if (!updateForm.username || !updateForm.password) {
+      alert("Please enter both the login email and password.")
+      return
+    }
+
+    setIsEncrypting(true)
+    try {
+      const rawString = JSON.stringify(updateForm)
+      const cryptoResult = await encryptData(rawString) as any
+      const encryptedData = cryptoResult.encryptedData || cryptoResult.ciphertext || cryptoResult
+      const iv = cryptoResult.iv || ''
+
+      const res = await fetch('/api/credentials/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ poolId, encryptedData, iv })
+      })
+
+      if (!res.ok) throw new Error("Failed to update credentials in database.")
+
+      alert("Vault Updated Successfully! Your members will now see the new password.")
+      setUpdatingPoolId(null)
+      setUpdateForm({ username: '', password: '' })
+    } catch (err: any) {
+      alert("Error updating vault: " + err.message)
+    } finally {
+      setIsEncrypting(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#05080F] flex flex-col items-center justify-center">
+        <Loader2 className="animate-spin mb-4 text-fintech-gold" size={40} />
+        <p className="font-medium text-white/50">Loading your dashboard...</p>
+      </div>
+    )
+  }
 
   return (
-    // 🔥 Restored the dark background wrapper so everything looks perfect!
-    <div className="min-h-screen bg-[#05080F]"> 
+    <div className="min-h-screen bg-[#05080F]">
       <AppNavbar />
 
       <div className="max-w-7xl mx-auto px-6 py-12">
@@ -78,11 +123,12 @@ export default async function DashboardPage() {
               <div className="relative z-10">
                 <div className="flex items-center gap-3 text-fintech-gold font-medium mb-4">
                   <Wallet size={20} />
-                  <span>Available Balance</span>
+                  <span>Cleared Available Balance</span>
                 </div>
-                <div className="text-5xl font-black text-white mb-8 tracking-tight">
+                <div className="text-5xl font-black text-white mb-2 tracking-tight">
                   ₦{profile?.balance?.toLocaleString() || '0'}
                 </div>
+                <p className="text-sm text-white/50 mb-8">*Funds are added here 48 hours after a member pays.</p>
                 
                 <div className="flex gap-4">
                   <WithdrawButton activeEarnings={profile?.balance || 0} />
@@ -175,7 +221,7 @@ export default async function DashboardPage() {
                           )}
                           
                           <Link href={`/dashboard/subscriptions`}>
-                            <button className="px-4 py-2 rounded-lg bg-fintech-gold text-fintech-navy font-bold text-sm hover:scale-105 transition-transform">
+                            <button className="px-4 py-2 rounded-lg bg-fintech-gold text-[#05080F] font-bold text-sm hover:scale-105 transition-transform">
                               Manage
                             </button>
                           </Link>
@@ -209,22 +255,70 @@ export default async function DashboardPage() {
               
               <div className="space-y-4">
                 {myPools && myPools.length > 0 ? (
-                  myPools.map((pool: any) => (
-                    <div key={pool.id} className="p-5 rounded-2xl bg-white/5 border border-white/10">
-                      <div className="flex justify-between items-start mb-4">
-                        <h3 className="font-bold text-white">{pool.service_name}</h3>
-                        <span className="text-xs font-bold px-2 py-1 rounded bg-white/10 text-white">
-                          {pool.current_seats} / {pool.max_seats} Seats
-                        </span>
+                  myPools.map((pool: any) => {
+                    const isUpdating = updatingPoolId === pool.id;
+
+                    return (
+                      <div key={pool.id} className="p-5 rounded-2xl bg-white/5 border border-white/10">
+                        <div className="flex justify-between items-start mb-4">
+                          <h3 className="font-bold text-white">{pool.service_name}</h3>
+                          <span className="text-xs font-bold px-2 py-1 rounded bg-white/10 text-white">
+                            {pool.current_seats} / {pool.max_seats} Seats
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm mb-4">
+                          <span className="text-fintech-gold font-bold">₦{pool.price_per_seat.toLocaleString()} <span className="text-fintech-slate/50">/ seat</span></span>
+                          <Link href={`/pools/${pool.id}`} className="text-white/50 hover:text-fintech-gold flex items-center gap-1">
+                            View <ArrowRight size={14} />
+                          </Link>
+                        </div>
+
+                        {/* 🔥 RESTORED EDIT VAULT FEATURE */}
+                        {!isUpdating ? (
+                          <button 
+                            onClick={() => setUpdatingPoolId(pool.id)}
+                            className="w-full text-sm text-fintech-slate/50 hover:text-fintech-gold font-medium flex items-center justify-center gap-2 mt-4 pt-4 border-t border-white/10 transition-colors"
+                          >
+                            <Key size={14} /> Update Vault Credentials
+                          </button>
+                        ) : (
+                          <div className="bg-white/5 border border-white/10 rounded-xl p-4 mt-4 animate-in fade-in slide-in-from-top-2">
+                            <div className="flex justify-between items-center mb-3">
+                              <span className="text-xs font-bold text-fintech-gold uppercase flex items-center gap-1">
+                                <Edit3 size={12}/> Edit Vault
+                              </span>
+                              <button onClick={() => setUpdatingPoolId(null)} className="text-white/50 hover:text-white">
+                                <X size={16} />
+                              </button>
+                            </div>
+                            <div className="space-y-3">
+                              <input 
+                                type="text" 
+                                placeholder="New Login Email" 
+                                value={updateForm.username}
+                                onChange={(e) => setUpdateForm({...updateForm, username: e.target.value})}
+                                className="w-full bg-[#05080F] border border-white/10 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-fintech-gold placeholder:text-gray-600"
+                              />
+                              <input 
+                                type="password" 
+                                placeholder="New Password" 
+                                value={updateForm.password}
+                                onChange={(e) => setUpdateForm({...updateForm, password: e.target.value})}
+                                className="w-full bg-[#05080F] border border-white/10 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-fintech-gold placeholder:text-gray-600"
+                              />
+                              <Button 
+                                onClick={() => handleUpdateCredentials(pool.id)}
+                                isLoading={isEncrypting}
+                                className="w-full bg-fintech-gold text-[#05080F] hover:bg-fintech-gold/90 font-bold py-2 h-auto mt-1"
+                              >
+                                Secure & Save Password
+                              </Button>
+                            </div>
+                          </div>
+                        )}
                       </div>
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="text-fintech-gold font-bold">₦{pool.price_per_seat.toLocaleString()} <span className="text-fintech-slate/50">/ seat</span></span>
-                        <Link href={`/pools/${pool.id}`} className="text-white hover:text-fintech-gold flex items-center gap-1">
-                          View <ArrowRight size={14} />
-                        </Link>
-                      </div>
-                    </div>
-                  ))
+                    )
+                  })
                 ) : (
                   <div className="p-8 rounded-2xl bg-white/5 border border-white/10 text-center">
                     <p className="text-fintech-slate/50 text-sm">You are not hosting any pools.</p>
