@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { LogOut, Plus, LayoutDashboard, ShieldAlert, Key, User, Menu, X } from 'lucide-react' // 🔥 Added Menu and X
+import { LogOut, Plus, LayoutDashboard, ShieldAlert, Key, User, Menu, X } from 'lucide-react'
 
 interface AppNavbarProps {
   userRole?: string;
@@ -18,7 +18,7 @@ export function AppNavbar({ userRole }: AppNavbarProps) {
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   
-  // 🔥 NEW: State to control the mobile menu
+  // State to control the mobile menu
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   useEffect(() => {
@@ -56,15 +56,19 @@ export function AppNavbar({ userRole }: AppNavbarProps) {
 
   return (
     <nav className="bg-[#0A0F1E] text-white sticky top-0 z-50 shadow-md">
-      {/* 🔥 The Main Desktop/Header Row */}
+      {/* The Main Desktop/Header Row */}
       <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
         
-        {/* Platform Logo */}
-        <Link href="/" className="text-xl font-bold tracking-tight flex items-center gap-2">
-          SplitPay<span className="text-[#C9A84C]">NG</span>
+        {/* 🔥 Platform Logo Updated to Image */}
+        <Link href="/" className="flex items-center transition-transform hover:scale-105">
+          <img 
+            src="/logo.png" 
+            alt="SplitPayNG Logo" 
+            className="h-10 w-auto object-contain" 
+          />
         </Link>
 
-        {/* 🔥 Navigation Links (DESKTOP ONLY) */}
+        {/* Navigation Links (DESKTOP ONLY) */}
         <div className="hidden md:flex items-center gap-8">
           <Link 
             href="/browse" 
@@ -110,7 +114,7 @@ export function AppNavbar({ userRole }: AppNavbarProps) {
         {/* Action Buttons (Right Side) */}
         <div className="flex items-center gap-4">
           
-          {/* 🔥 Mobile Menu Toggle Button (Visible only on mobile) */}
+          {/* Mobile Menu Toggle Button (Visible only on mobile) */}
           <div className="md:hidden flex items-center">
              {!isLoading && (
                <button 
@@ -163,7 +167,7 @@ export function AppNavbar({ userRole }: AppNavbarProps) {
         </div>
       </div>
 
-      {/* 🔥 THE NEW MOBILE DROPDOWN MENU */}
+      {/* THE NEW MOBILE DROPDOWN MENU */}
       {isMobileMenuOpen && (
         <div className="md:hidden absolute top-full left-0 w-full bg-[#0A0F1E] border-t border-gray-800 shadow-xl animate-in slide-in-from-top-2 flex flex-col px-6 py-6 space-y-6">
           
