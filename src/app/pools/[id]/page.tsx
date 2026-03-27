@@ -64,6 +64,12 @@ export default function PoolDetailsPage() {
       const data = await res.json()
 
       if (!res.ok || data.error) {
+        // Intercept backend guard redirects (e.g., Mandatory Card Tokenization)
+        if (data.redirect) {
+          alert(`Security Notice: ${data.error}`)
+          window.location.href = data.redirect
+          return
+        }
         throw new Error(data.error || 'Checkout initialization failed.')
       }
 

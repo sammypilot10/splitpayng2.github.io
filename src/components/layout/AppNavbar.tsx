@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { LogOut, Plus, LayoutDashboard, ShieldAlert, Key, User, Menu, X } from 'lucide-react'
+import { LogOut, Plus, LayoutDashboard, ShieldAlert, Key, User, Menu, X, CreditCard } from 'lucide-react'
 
 interface AppNavbarProps {
   userRole?: string;
@@ -84,6 +84,7 @@ export function AppNavbar({ userRole }: AppNavbarProps) {
           {userEmail && (
             <>
               {(userRoleDb === 'member' || isAdmin) && (
+              <>
               <Link 
                 href="/dashboard/subscriptions" 
                 className={`text-sm font-medium flex items-center gap-2 transition-colors ${
@@ -92,6 +93,16 @@ export function AppNavbar({ userRole }: AppNavbarProps) {
               >
                 <Key size={16} /> My Subscriptions
               </Link>
+              
+              <Link 
+                href="/dashboard/cards" 
+                className={`text-sm font-medium flex items-center gap-2 transition-colors ${
+                  pathname === '/dashboard/cards' ? 'text-[#C9A84C] border-b-2 border-[#C9A84C] pb-1' : 'text-gray-300 hover:text-white pb-1'
+                }`}
+              >
+                <CreditCard size={16} /> Payment Methods
+              </Link>
+              </>
               )}
               
               {(userRoleDb === 'host' || isAdmin) && (
@@ -190,9 +201,15 @@ export function AppNavbar({ userRole }: AppNavbarProps) {
           {userEmail && (
             <>
               {(userRoleDb === 'member' || isAdmin) && (
+              <>
               <Link href="/dashboard/subscriptions" onClick={() => setIsMobileMenuOpen(false)} className={`text-base font-medium flex items-center gap-2 ${pathname === '/dashboard/subscriptions' ? 'text-[#C9A84C]' : 'text-gray-300'}`}>
                 <Key size={18} /> My Subscriptions
               </Link>
+              
+              <Link href="/dashboard/cards" onClick={() => setIsMobileMenuOpen(false)} className={`text-base font-medium flex items-center gap-2 ${pathname === '/dashboard/cards' ? 'text-[#C9A84C]' : 'text-gray-300'}`}>
+                <CreditCard size={18} /> Payment Methods
+              </Link>
+              </>
               )}
               
               {(userRoleDb === 'host' || isAdmin) && (
