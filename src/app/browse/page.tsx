@@ -76,10 +76,10 @@ export default async function BrowsePoolsPage() {
                 return (
                   <div key={pool.id} className="bg-white/5 rounded-3xl border border-white/10 p-8 hover:border-white/20 hover:bg-white/10 transition-all flex flex-col h-full group">
                     <div className="flex justify-between items-start mb-6">
-                      <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center p-2 border border-white/5 shadow-inner">
-                        <BrandLogo domain={domain} name={pool.service_name} size={28} />
-                      </div>
-                      <div className="bg-white/10 px-3 py-1 rounded-full text-xs font-bold text-gray-300 flex items-center gap-1.5 border border-white/5">
+                    <div className="h-14 w-auto min-w-[3.5rem] px-3 bg-white/10 rounded-2xl flex items-center justify-center border border-white/5 shadow-inner">
+                      <BrandLogo domain={domain} name={pool.service_name} size={28} />
+                    </div>
+                    <div className="bg-white/10 px-3 py-1 rounded-full text-xs font-bold text-gray-300 flex items-center gap-1.5 border border-white/5">
                         <Users size={12} className="text-fintech-gold" />
                         {pool.max_seats - pool.current_seats} seats left
                       </div>

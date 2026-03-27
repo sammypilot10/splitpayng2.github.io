@@ -1,46 +1,38 @@
 'use client'
 
 import { Tv } from 'lucide-react'
-import { FaSpotify, FaAmazon, FaApple, FaYoutube } from 'react-icons/fa'
 
-export function BrandLogo({ domain, name, size = 28 }: { domain?: string | null, name: string, size?: number }) {
+export const OFFICIAL_LOGOS: Record<string, string> = {
+  'netflix': 'https://upload.wikimedia.org/wikipedia/commons/0/08/Netflix_2015_logo.svg',
+  'spotify': 'https://upload.wikimedia.org/wikipedia/commons/2/26/Spotify_logo_with_text.svg',
+  'amazon': 'https://upload.wikimedia.org/wikipedia/commons/1/11/Amazon_Prime_Video_logo.svg',
+  'prime': 'https://upload.wikimedia.org/wikipedia/commons/1/11/Amazon_Prime_Video_logo.svg',
+  'dstv': 'https://upload.wikimedia.org/wikipedia/commons/3/36/DStv_Logo_2020.svg',
+  'apple': 'https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg',
+  'youtube': 'https://upload.wikimedia.org/wikipedia/commons/b/b8/YouTube_Logo_2017.svg',
+}
+
+export function BrandLogo({ name, size = 28 }: { domain?: string | null, name: string, size?: number }) {
   const normalized = name.toLowerCase()
 
-  if (normalized.includes('spotify')) {
-    return <FaSpotify size={size} color="#1DB954" className="drop-shadow-sm" />
-  }
-  
-  if (normalized.includes('amazon') || normalized.includes('prime')) {
-    return <FaAmazon size={size} color="#00A8E1" className="drop-shadow-sm" />
-  }
-  
-  if (normalized.includes('apple')) {
-    return <FaApple size={size} color="#FFFFFF" className="drop-shadow-sm" />
-  }
-  
-  if (normalized.includes('youtube')) {
-    return <FaYoutube size={size} color="#FF0000" className="drop-shadow-sm" />
-  }
-  
-  if (normalized.includes('dstv')) {
+  let logoSrc = null
+  Object.keys(OFFICIAL_LOGOS).forEach((key) => {
+    if (normalized.includes(key)) {
+      logoSrc = OFFICIAL_LOGOS[key]
+    }
+  })
+
+  // Apple logo is black, so on dark theme it needs a CSS invert
+  const isInvert = normalized.includes('apple') ? 'invert brightness-0 filter' : ''
+
+  if (logoSrc) {
     return (
-      <div 
-        className="flex items-center justify-center bg-gradient-to-br from-[#00A1DF] to-[#005a8f] rounded shadow-sm leading-none border border-white/10"
-        style={{ width: size * 1.5, height: size * 0.8, fontSize: size * 0.45 }}
-      >
-        <span className="text-white font-black tracking-tighter drop-shadow-md">DStv</span>
-      </div>
-    )
-  }
-  
-  if (normalized.includes('netflix')) {
-    return (
-      <div 
-        className="flex items-center justify-center leading-none"
-        style={{ width: size, height: size, fontSize: size * 0.9 }}
-      >
-        <span className="text-[#E50914] font-black tracking-tighter drop-shadow-md" style={{ fontFamily: 'Arial, sans-serif' }}>N</span>
-      </div>
+      <img 
+        src={logoSrc} 
+        alt={name} 
+        className={`object-contain w-full h-full drop-shadow-sm ${isInvert}`}
+        style={{ maxHeight: size * 1.5 }}
+      />
     )
   }
 

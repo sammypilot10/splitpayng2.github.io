@@ -209,7 +209,7 @@ function SubscriptionsContent() {
               <div key={sub.id} className="bg-white/5 rounded-3xl p-6 border border-white/10 flex flex-col hover:border-white/20 transition-all">
                 <div className="flex justify-between items-start mb-6">
                   <div className="flex gap-4 items-center">
-                    <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center p-2 border border-white/5 shadow-inner shrink-0 leading-none">
+                    <div className="h-12 w-auto min-w-[3rem] px-2 py-2 bg-white/10 rounded-xl flex items-center justify-center border border-white/5 shadow-inner shrink-0 leading-none">
                       <BrandLogo domain={domain} name={sub.pools?.service_name || 'Service'} size={24} />
                     </div>
                     <div>
