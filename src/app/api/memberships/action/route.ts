@@ -32,13 +32,29 @@ export async function POST(req: Request) {
         const { error } = await supabaseAdmin.from('pool_members').update({ escrow_status: 'confirmed', status: 'active' } as any).eq('id', memberId)
         
         if (!error) {
-          const hostId = member.pools?.host_id;
-          const price = member.pools?.price_per_seat || 0;
+          console.log(`[LEDGER] Escrow confirmed for Member ID: ${memberId}. Commencing funds release.`);
           
-          if (hostId && price > 0) {
+          // UNBREAKABLE STRICT POOL QUERY - avoid Supabase join array ambiguity
+          const { data: exactPool, error: poolError } = await supabaseAdmin.from('pools').select('host_id, price_per_seat').eq('id', member.pool_id).single()
+          
+          if (exactPool && exactPool.host_id && exactPool.price_per_seat) {
+            const hostId = exactPool.host_id;
+            const price = exactPool.price_per_seat;
+            
+            console.log(`[LEDGER] Adding ₦${price} to Host ${hostId} available balance...`);
+            
             const { data: hostProfile } = await supabaseAdmin.from('profiles').select('balance').eq('id', hostId).single();
             const newBalance = (hostProfile?.balance || 0) + price;
-            await supabaseAdmin.from('profiles').update({ balance: newBalance }).eq('id', hostId);
+            
+            const { error: walletError } = await supabaseAdmin.from('profiles').update({ balance: newBalance }).eq('id', hostId);
+            
+            if (walletError) {
+              console.error("[CRITICAL] Failed to credit wallet!", walletError);
+            } else {
+              console.log(`[LEDGER] SUCCESS! Host wallet augmented to: ₦${newBalance}`);
+            }
+          } else {
+            console.error(`[CRITICAL] Failed to resolve exact pool config. PoolID: ${member.pool_id}. Error:`, poolError);
           }
         }
       }
