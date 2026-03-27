@@ -3,9 +3,25 @@ import { createClient } from '@/lib/supabase/server'
 import { AppNavbar } from '@/components/layout/AppNavbar'
 import { Button } from '@/components/ui/Button'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Users, Tv, Sparkles } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
+
+const getServiceBrandDomain = (serviceName: string) => {
+  const normalized = serviceName.toLowerCase();
+  if (normalized.includes('netflix')) return 'netflix.com';
+  if (normalized.includes('spotify')) return 'spotify.com';
+  if (normalized.includes('amazon') || normalized.includes('prime')) return 'primevideo.com';
+  if (normalized.includes('dstv')) return 'dstv.com';
+  if (normalized.includes('apple')) return 'apple.com';
+  if (normalized.includes('youtube')) return 'youtube.com';
+  if (normalized.includes('showmax')) return 'showmax.com';
+  if (normalized.includes('canva')) return 'canva.com';
+  if (normalized.includes('disney')) return 'disneyplus.com';
+  if (normalized.includes('hulu')) return 'hulu.com';
+  return null;
+}
 
 export default async function BrowsePoolsPage() {
   const supabase = createClient()
@@ -25,7 +41,7 @@ export default async function BrowsePoolsPage() {
   const availablePools = pools?.filter(pool => pool.current_seats < pool.max_seats) || []
 
   return (
-    <div className="min-h-screen bg-fintech-slate flex flex-col">
+    <div className="min-h-screen bg-[#05080F] flex flex-col">
       {/* We will set the role to "member" here so they see the member view */}
       <AppNavbar userRole="member" />
       
@@ -33,59 +49,68 @@ export default async function BrowsePoolsPage() {
         <div className="max-w-7xl mx-auto">
           
           <div className="mb-10 text-center sm:text-left">
-            <h1 className="text-4xl font-bold text-fintech-navy mb-4 flex items-center justify-center sm:justify-start gap-3">
+            <h1 className="text-4xl font-bold text-white mb-4 flex items-center justify-center sm:justify-start gap-3">
               <Sparkles className="text-fintech-gold" size={32} />
               Browse Available Pools
             </h1>
-            <p className="text-gray-500 text-lg max-w-2xl">
+            <p className="text-gray-400 text-lg max-w-2xl">
               Stop paying full price for subscriptions. Join a verified pool, split the bill, and get premium access for a fraction of the cost.
             </p>
           </div>
 
           {availablePools.length === 0 ? (
-            <div className="bg-white rounded-3xl border border-gray-100 p-16 text-center shadow-sm">
-              <Tv className="mx-auto text-gray-300 mb-4" size={48} />
-              <h3 className="text-xl font-bold text-fintech-navy mb-2">No pools available right now</h3>
-              <p className="text-gray-500 mb-6">Check back later or become a Host and create your own!</p>
+            <div className="bg-white/5 rounded-3xl border border-white/10 p-16 text-center shadow-sm">
+              <Tv className="mx-auto text-white/30 mb-4" size={48} />
+              <h3 className="text-xl font-bold text-white mb-2">No pools available right now</h3>
+              <p className="text-gray-400 mb-6">Check back later or become a Host and create your own!</p>
               <Link href="/create-pool">
-                <Button className="bg-fintech-navy text-white hover:bg-fintech-navy/90">
+                <Button className="bg-fintech-gold text-[#05080F] hover:bg-fintech-gold/90 font-bold">
                   Host a Pool
                 </Button>
               </Link>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {availablePools.map((pool) => (
-                <div key={pool.id} className="bg-white rounded-3xl border border-gray-100 p-8 shadow-sm hover:shadow-lg transition-all flex flex-col h-full group">
+              {availablePools.map((pool) => {
+                const domain = getServiceBrandDomain(pool.service_name);
+                return (
+                <div key={pool.id} className="bg-white/5 rounded-3xl border border-white/10 p-8 hover:border-white/20 hover:bg-white/10 transition-all flex flex-col h-full group">
                   <div className="flex justify-between items-start mb-6">
-                    <div className="bg-blue-50 text-blue-600 p-4 rounded-2xl">
-                      <Tv size={28} />
+                    <div className="w-14 h-14 bg-black/40 rounded-2xl flex items-center justify-center p-2 border border-white/5 shadow-inner">
+                      {domain ? (
+                        <div className="relative w-full h-full">
+                          <Image src={`https://logo.clearbit.com/${domain}`} alt={pool.service_name} fill className="object-contain" unoptimized />
+                        </div>
+                      ) : (
+                        <Tv size={28} className="text-gray-400" />
+                      )}
                     </div>
-                    <div className="bg-gray-50 px-3 py-1 rounded-full text-xs font-bold text-gray-500 flex items-center gap-1.5">
-                      <Users size={12} />
+                    <div className="bg-white/10 px-3 py-1 rounded-full text-xs font-bold text-gray-300 flex items-center gap-1.5 border border-white/5">
+                      <Users size={12} className="text-fintech-gold" />
                       {pool.max_seats - pool.current_seats} seats left
                     </div>
                   </div>
                   
                   <div className="flex-grow">
-                    <h2 className="text-2xl font-bold text-fintech-navy mb-1">{pool.service_name}</h2>
+                    <h2 className="text-2xl font-bold text-white mb-1">{pool.service_name}</h2>
                     <p className="text-sm text-gray-400 font-medium mb-6">Hosted by Verified Member</p>
                     
                     <div className="flex items-end gap-1 mb-8">
-                      <span className="text-3xl font-bold text-fintech-navy">
+                      <span className="text-3xl font-bold text-fintech-gold">
                         ₦{pool.price_per_seat.toLocaleString()}
                       </span>
-                      <span className="text-gray-400 font-medium mb-1">/month</span>
+                      <span className="text-gray-500 font-medium mb-1">/month</span>
                     </div>
                   </div>
 
                   <Link href={`/pools/${pool.id}`} className="w-full mt-auto">
-                    <Button className="w-full bg-fintech-navy hover:bg-fintech-navy/90 text-white py-6 font-bold text-lg group-hover:bg-fintech-gold group-hover:text-fintech-navy transition-colors">
+                    <Button className="w-full bg-white/10 hover:bg-fintech-gold text-white font-bold py-6 group-hover:text-[#05080F] border border-white/20 group-hover:border-fintech-gold transition-all">
                       Join Pool
                     </Button>
                   </Link>
                 </div>
-              ))}
+              );
+              })}
             </div>
           )}
         </div>

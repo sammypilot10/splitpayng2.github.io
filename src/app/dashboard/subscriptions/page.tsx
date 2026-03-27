@@ -6,7 +6,23 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { AppNavbar } from '@/components/layout/AppNavbar'
 import { Button } from '@/components/ui/Button'
-import { Clock, ShieldCheck, ShieldAlert, Key, Lock, Loader2, AlertTriangle, Eye, EyeOff, Copy, Check } from 'lucide-react'
+import { Clock, ShieldCheck, ShieldAlert, Key, Lock, Loader2, AlertTriangle, Eye, EyeOff, Copy, Check, Tv } from 'lucide-react'
+import Image from 'next/image'
+
+const getServiceBrandDomain = (serviceName: string) => {
+  const normalized = serviceName.toLowerCase();
+  if (normalized.includes('netflix')) return 'netflix.com';
+  if (normalized.includes('spotify')) return 'spotify.com';
+  if (normalized.includes('amazon') || normalized.includes('prime')) return 'primevideo.com';
+  if (normalized.includes('dstv')) return 'dstv.com';
+  if (normalized.includes('apple')) return 'apple.com';
+  if (normalized.includes('youtube')) return 'youtube.com';
+  if (normalized.includes('showmax')) return 'showmax.com';
+  if (normalized.includes('canva')) return 'canva.com';
+  if (normalized.includes('disney')) return 'disneyplus.com';
+  if (normalized.includes('hulu')) return 'hulu.com';
+  return null;
+}
 
 function SubscriptionsContent() {
   const [memberships, setMemberships] = useState<any[]>([])
@@ -159,7 +175,7 @@ function SubscriptionsContent() {
 
   if (loading || verifying) {
     return (
-      <div className="flex flex-col items-center justify-center py-32 text-fintech-navy">
+      <div className="flex flex-col items-center justify-center py-32 text-white/50">
         <Loader2 className="animate-spin mb-4 text-fintech-gold" size={40} />
         <p className="font-medium">{verifying ? "Verifying your secure payment..." : "Opening your vault..."}</p>
       </div>
@@ -169,16 +185,16 @@ function SubscriptionsContent() {
   return (
     <main className="max-w-5xl mx-auto px-6 py-12">
       <div className="mb-10">
-        <h1 className="text-3xl font-bold text-fintech-navy tracking-tight">My Subscriptions</h1>
-        <p className="text-gray-500 mt-2">Manage your active memberships and view your secure credentials.</p>
+        <h1 className="text-3xl font-bold text-white tracking-tight">My Subscriptions</h1>
+        <p className="text-white/50 mt-2">Manage your active memberships and view your secure credentials.</p>
       </div>
 
       {memberships.length === 0 ? (
-        <div className="bg-white rounded-3xl p-12 text-center shadow-sm border border-gray-100">
-          <Lock size={48} className="mx-auto text-gray-300 mb-4" />
-          <h3 className="text-xl font-bold text-fintech-navy mb-2">Your vault is empty</h3>
-          <p className="text-gray-500 mb-6">You haven't joined any subscription pools yet.</p>
-          <Button onClick={() => router.push('/')} className="bg-fintech-navy">Browse Pools</Button>
+        <div className="bg-white/5 rounded-3xl p-12 text-center border border-white/10">
+          <Lock size={48} className="mx-auto text-white/30 mb-4" />
+          <h3 className="text-xl font-bold text-white mb-2">Your vault is empty</h3>
+          <p className="text-white/50 mb-6">You haven't joined any subscription pools yet.</p>
+          <Button onClick={() => router.push('/browse')} className="bg-fintech-gold text-[#05080F] font-bold hover:bg-fintech-gold/90">Browse Pools</Button>
         </div>
       ) : (
         <div className="grid gap-6 md:grid-cols-2">
@@ -187,36 +203,48 @@ function SubscriptionsContent() {
             const isDecrypting = decryptingIds[sub.id];
             const unlockedCreds = decryptedCreds[sub.id];
             const isProcessing = isProcessingAction === sub.id;
+            const domain = getServiceBrandDomain(sub.pools?.service_name || '');
 
             return (
-              <div key={sub.id} className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col">
+              <div key={sub.id} className="bg-white/5 rounded-3xl p-6 border border-white/10 flex flex-col hover:border-white/20 transition-all">
                 <div className="flex justify-between items-start mb-6">
-                  <div>
-                    <h3 className="text-xl font-bold text-fintech-navy">{sub.pools?.service_name || 'Service'}</h3>
-                    <p className="text-sm font-medium text-gray-500">₦{sub.pools?.price_per_seat?.toLocaleString() || '0'} / month</p>
+                  <div className="flex gap-4 items-center">
+                    <div className="w-12 h-12 bg-black/40 rounded-xl flex items-center justify-center p-2 border border-white/5 shadow-inner shrink-0 leading-none">
+                      {domain ? (
+                        <div className="relative w-full h-full">
+                          <Image src={`https://logo.clearbit.com/${domain}`} alt={sub.pools?.service_name || 'Service'} fill className="object-contain object-left" unoptimized />
+                        </div>
+                      ) : (
+                        <Tv size={24} className="text-gray-400" />
+                      )}
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-white">{sub.pools?.service_name || 'Service'}</h3>
+                      <p className="text-sm font-medium text-fintech-gold">₦{sub.pools?.price_per_seat?.toLocaleString() || '0'} <span className="text-white/50">/ month</span></p>
+                    </div>
                   </div>
                   
                   {/* 🔥 UPDATED BADGES: Handles Refunded, Disputed, Escrow, and Active */}
                   {sub.escrow_status === 'refunded' ? (
-                    <span className="bg-gray-100 text-gray-600 text-[10px] font-bold px-3 py-1 rounded-full flex items-center gap-1">
+                    <span className="bg-white/10 text-white/50 border border-white/10 text-[10px] font-bold px-3 py-1 rounded-full flex items-center gap-1">
                       <Lock size={12} /> REFUNDED
                     </span>
                   ) : sub.escrow_status === 'disputed' ? (
-                    <span className="bg-red-100 text-red-700 text-[10px] font-bold px-3 py-1 rounded-full flex items-center gap-1">
+                    <span className="bg-red-500/10 text-red-400 border border-red-500/20 text-[10px] font-bold px-3 py-1 rounded-full flex items-center gap-1">
                       <ShieldAlert size={12} /> DISPUTED
                     </span>
                   ) : sub.status === 'escrow' ? (
-                    <span className="bg-amber-100 text-amber-700 text-[10px] font-bold px-3 py-1 rounded-full flex items-center gap-1">
+                    <span className="bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[10px] font-bold px-3 py-1 rounded-full flex items-center gap-1">
                       <Clock size={12} /> IN ESCROW
                     </span>
                   ) : (
-                    <span className="bg-green-100 text-green-700 text-[10px] font-bold px-3 py-1 rounded-full flex items-center gap-1">
+                    <span className="bg-green-500/10 text-green-400 border border-green-500/20 text-[10px] font-bold px-3 py-1 rounded-full flex items-center gap-1">
                       <ShieldCheck size={12} /> ACTIVE
                     </span>
                   )}
                 </div>
 
-                <div className="bg-fintech-navy text-white p-5 rounded-2xl mb-6 flex-grow">
+                <div className="bg-[#0a1224] border border-white/5 shadow-inner text-white p-5 rounded-2xl mb-6 flex-grow">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2 text-fintech-gold">
                       <Key size={16} />
@@ -331,8 +359,8 @@ function SubscriptionsContent() {
                 </div>
 
                 {sub.status === 'escrow' && sub.escrow_status !== 'disputed' && sub.escrow_status !== 'refunded' && (
-                  <div className="space-y-3 pt-2 border-t border-gray-100">
-                    <p className="text-xs text-center text-gray-500 font-medium">Do the credentials work?</p>
+                  <div className="space-y-3 pt-4 border-t border-white/10 mt-2">
+                    <p className="text-xs text-center text-white/50 font-medium">Do the credentials work?</p>
                     <Button 
                       onClick={() => handleConfirmAccess(sub.id)} 
                       disabled={isProcessing}
@@ -360,7 +388,7 @@ function SubscriptionsContent() {
 
 export default function SubscriptionsPage() {
   return (
-    <div className="min-h-screen bg-fintech-slate">
+    <div className="min-h-screen bg-[#05080F]">
       <AppNavbar userRole="member" />
       <Suspense fallback={<div className="flex justify-center py-20"><Loader2 className="animate-spin text-fintech-gold" size={40}/></div>}>
         <SubscriptionsContent />
