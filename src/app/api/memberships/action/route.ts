@@ -20,7 +20,7 @@ export async function POST(req: Request) {
     // Verify this member belongs to this user
     const { data: member } = await supabaseAdmin
       .from('pool_members')
-      .select('*, pools(service_name, profiles(email))')
+      .select('*, pools(service_name, host_id, price_per_seat, profiles(email))')
       .eq('id', memberId)
       .eq('member_id', user.id)
       .single()
@@ -28,7 +28,20 @@ export async function POST(req: Request) {
     if (!member) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     if (action === 'confirm') {
-      await supabaseAdmin.from('pool_members').update({ escrow_status: 'confirmed', status: 'active' } as any).eq('id', memberId)
+      if (member.escrow_status !== 'confirmed') {
+        const { error } = await supabaseAdmin.from('pool_members').update({ escrow_status: 'confirmed', status: 'active' } as any).eq('id', memberId)
+        
+        if (!error) {
+          const hostId = member.pools?.host_id;
+          const price = member.pools?.price_per_seat || 0;
+          
+          if (hostId && price > 0) {
+            const { data: hostProfile } = await supabaseAdmin.from('profiles').select('balance').eq('id', hostId).single();
+            const newBalance = (hostProfile?.balance || 0) + price;
+            await supabaseAdmin.from('profiles').update({ balance: newBalance }).eq('id', hostId);
+          }
+        }
+      }
     } 
     else if (action === 'dispute') {
       await supabaseAdmin.from('pool_members').update({ escrow_status: 'disputed' } as any).eq('id', memberId)

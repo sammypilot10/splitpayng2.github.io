@@ -48,6 +48,12 @@ export async function POST(req: Request) {
         })
         if (mErr) throw new Error(`Pool Member Insert Failed: ${mErr.message}`)
 
+        console.log("📈 INCREMENTING POOL SEATS...")
+        const { data: poolData } = await supabaseAdmin.from('pools').select('current_seats').eq('id', poolId).single()
+        if (poolData) {
+           await supabaseAdmin.from('pools').update({ current_seats: poolData.current_seats + 1 }).eq('id', poolId)
+        }
+
         console.log("💾 SAVING TRANSACTION LOG...")
         const { error: tErr } = await supabaseAdmin.from('transactions').insert({
             pool_id: poolId,
