@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { AppNavbar } from '@/components/layout/AppNavbar'
 import { Button } from '@/components/ui/Button'
 import { Clock, ShieldCheck, ShieldAlert, Key, Lock, Loader2, AlertTriangle, Eye, EyeOff, Copy, Check, Tv } from 'lucide-react'
-import Image from 'next/image'
+import { BrandLogo } from '@/components/pools/BrandLogo'
 
 const getServiceBrandDomain = (serviceName: string) => {
   const normalized = serviceName.toLowerCase();
@@ -209,14 +209,8 @@ function SubscriptionsContent() {
               <div key={sub.id} className="bg-white/5 rounded-3xl p-6 border border-white/10 flex flex-col hover:border-white/20 transition-all">
                 <div className="flex justify-between items-start mb-6">
                   <div className="flex gap-4 items-center">
-                    <div className="w-12 h-12 bg-black/40 rounded-xl flex items-center justify-center p-2 border border-white/5 shadow-inner shrink-0 leading-none">
-                      {domain ? (
-                        <div className="relative w-full h-full">
-                          <Image src={`https://logo.clearbit.com/${domain}`} alt={sub.pools?.service_name || 'Service'} fill className="object-contain object-left" unoptimized />
-                        </div>
-                      ) : (
-                        <Tv size={24} className="text-gray-400" />
-                      )}
+                    <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center p-2 border border-white/5 shadow-inner shrink-0 leading-none">
+                      <BrandLogo domain={domain} name={sub.pools?.service_name || 'Service'} size={24} />
                     </div>
                     <div>
                       <h3 className="text-xl font-bold text-white">{sub.pools?.service_name || 'Service'}</h3>

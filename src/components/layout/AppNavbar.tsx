@@ -18,14 +18,14 @@ export function AppNavbar({ userRole }: AppNavbarProps) {
   const [isAdmin, setIsAdmin] = useState(false)
   const [userRoleDb, setUserRoleDb] = useState<string>(userRole || 'member')
   const [isLoading, setIsLoading] = useState(true)
-  
+
   // State to control the mobile menu
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   useEffect(() => {
     const fetchUser = async () => {
       const { data: { user } } = await supabase.auth.getUser()
-      
+
       if (!user) {
         setIsLoading(false)
         return
@@ -47,7 +47,7 @@ export function AppNavbar({ userRole }: AppNavbarProps) {
       }
       setIsLoading(false)
     }
-    
+
     fetchUser()
   }, [supabase])
 
@@ -60,23 +60,22 @@ export function AppNavbar({ userRole }: AppNavbarProps) {
     <nav className="bg-[#0A0F1E] text-white sticky top-0 z-50 shadow-md">
       {/* The Main Desktop/Header Row */}
       <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-        
+
         {/* 🔥 Platform Logo Updated to Image */}
         <Link href="/" className="flex items-center transition-transform hover:scale-105">
-          <img 
-            src="/logo.png" 
-            alt="SplitPayNG Logo" 
-            className="h-10 w-auto object-contain" 
+          <img
+            src="/logo.png"
+            alt="SplitPayNG Logo"
+            className="h-10 w-auto object-contain"
           />
         </Link>
 
         {/* Navigation Links (DESKTOP ONLY) */}
         <div className="hidden md:flex items-center gap-8">
-          <Link 
-            href="/browse" 
-            className={`text-sm font-medium flex items-center gap-2 transition-colors ${
-              pathname === '/browse' ? 'text-[#C9A84C] border-b-2 border-[#C9A84C] pb-1' : 'text-gray-300 hover:text-white pb-1'
-            }`}
+          <Link
+            href="/browse"
+            className={`text-sm font-medium flex items-center gap-2 transition-colors ${pathname === '/browse' ? 'text-[#C9A84C] border-b-2 border-[#C9A84C] pb-1' : 'text-gray-300 hover:text-white pb-1'
+              }`}
           >
             Browse Pools
           </Link>
@@ -84,43 +83,40 @@ export function AppNavbar({ userRole }: AppNavbarProps) {
           {userEmail && (
             <>
               {(userRoleDb === 'member' || isAdmin) && (
-              <>
-              <Link 
-                href="/dashboard/subscriptions" 
-                className={`text-sm font-medium flex items-center gap-2 transition-colors ${
-                  pathname === '/dashboard/subscriptions' ? 'text-[#C9A84C] border-b-2 border-[#C9A84C] pb-1' : 'text-gray-300 hover:text-white pb-1'
-                }`}
-              >
-                <Key size={16} /> My Subscriptions
-              </Link>
-              
-              <Link 
-                href="/dashboard/cards" 
-                className={`text-sm font-medium flex items-center gap-2 transition-colors ${
-                  pathname === '/dashboard/cards' ? 'text-[#C9A84C] border-b-2 border-[#C9A84C] pb-1' : 'text-gray-300 hover:text-white pb-1'
-                }`}
-              >
-                <CreditCard size={16} /> Payment Methods
-              </Link>
-              </>
+                <>
+                  <Link
+                    href="/dashboard/subscriptions"
+                    className={`text-sm font-medium flex items-center gap-2 transition-colors ${pathname === '/dashboard/subscriptions' ? 'text-[#C9A84C] border-b-2 border-[#C9A84C] pb-1' : 'text-gray-300 hover:text-white pb-1'
+                      }`}
+                  >
+                    <Key size={16} /> My Subscriptions
+                  </Link>
+
+                  <Link
+                    href="/dashboard/cards"
+                    className={`text-sm font-medium flex items-center gap-2 transition-colors ${pathname === '/dashboard/cards' ? 'text-[#C9A84C] border-b-2 border-[#C9A84C] pb-1' : 'text-gray-300 hover:text-white pb-1'
+                      }`}
+                  >
+                    <CreditCard size={16} /> Payment Methods
+                  </Link>
+                </>
               )}
-              
+
               {(userRoleDb === 'host' || isAdmin) && (
-              <Link 
-                href="/dashboard" 
-                className={`text-sm font-medium flex items-center gap-2 transition-colors ${
-                  pathname === '/dashboard' ? 'text-[#C9A84C] border-b-2 border-[#C9A84C] pb-1' : 'text-gray-300 hover:text-white pb-1'
-                }`}
-              >
-                <LayoutDashboard size={16} /> Host Dashboard
-              </Link>
+                <Link
+                  href="/dashboard"
+                  className={`text-sm font-medium flex items-center gap-2 transition-colors ${pathname === '/dashboard' ? 'text-[#C9A84C] border-b-2 border-[#C9A84C] pb-1' : 'text-gray-300 hover:text-white pb-1'
+                    }`}
+                >
+                  <LayoutDashboard size={16} /> Host Dashboard
+                </Link>
               )}
             </>
           )}
 
           {isAdmin && (
-            <Link 
-              href="/admin/dashboard" 
+            <Link
+              href="/admin/dashboard"
               className="text-xs font-bold flex items-center gap-1.5 text-red-400 hover:text-red-300 transition-colors bg-red-400/10 px-3 py-1.5 rounded-full border border-red-500/20"
             >
               <ShieldAlert size={14} /> Admin Panel
@@ -130,17 +126,17 @@ export function AppNavbar({ userRole }: AppNavbarProps) {
 
         {/* Action Buttons (Right Side) */}
         <div className="flex items-center gap-4">
-          
+
           {/* Mobile Menu Toggle Button (Visible only on mobile) */}
           <div className="md:hidden flex items-center">
-             {!isLoading && (
-               <button 
-                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                 className="text-gray-300 hover:text-white transition-colors"
-               >
-                 {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-               </button>
-             )}
+            {!isLoading && (
+              <button
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="text-gray-300 hover:text-white transition-colors"
+              >
+                {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+              </button>
+            )}
           </div>
 
           {/* Desktop Auth Buttons (Hidden on mobile) */}
@@ -159,8 +155,8 @@ export function AppNavbar({ userRole }: AppNavbarProps) {
 
                 <div className="w-px h-5 bg-gray-700"></div>
 
-                <button 
-                  onClick={handleSignOut} 
+                <button
+                  onClick={handleSignOut}
                   className="text-gray-400 hover:text-white transition-colors flex items-center gap-2 text-sm font-medium"
                 >
                   <LogOut size={16} /> Sign Out
@@ -187,7 +183,7 @@ export function AppNavbar({ userRole }: AppNavbarProps) {
       {/* THE NEW MOBILE DROPDOWN MENU */}
       {isMobileMenuOpen && (
         <div className="md:hidden absolute top-full left-0 w-full bg-[#0A0F1E] border-t border-gray-800 shadow-xl animate-in slide-in-from-top-2 flex flex-col px-6 py-6 space-y-6">
-          
+
           {userEmail && (
             <div className="flex items-center gap-2 text-sm font-bold text-[#C9A84C] bg-[#C9A84C]/10 px-4 py-2 rounded-xl border border-[#C9A84C]/20 w-fit mb-2">
               <User size={14} /> {userEmail}
@@ -201,23 +197,23 @@ export function AppNavbar({ userRole }: AppNavbarProps) {
           {userEmail && (
             <>
               {(userRoleDb === 'member' || isAdmin) && (
-              <>
-              <Link href="/dashboard/subscriptions" onClick={() => setIsMobileMenuOpen(false)} className={`text-base font-medium flex items-center gap-2 ${pathname === '/dashboard/subscriptions' ? 'text-[#C9A84C]' : 'text-gray-300'}`}>
-                <Key size={18} /> My Subscriptions
-              </Link>
-              
-              <Link href="/dashboard/cards" onClick={() => setIsMobileMenuOpen(false)} className={`text-base font-medium flex items-center gap-2 ${pathname === '/dashboard/cards' ? 'text-[#C9A84C]' : 'text-gray-300'}`}>
-                <CreditCard size={18} /> Payment Methods
-              </Link>
-              </>
+                <>
+                  <Link href="/dashboard/subscriptions" onClick={() => setIsMobileMenuOpen(false)} className={`text-base font-medium flex items-center gap-2 ${pathname === '/dashboard/subscriptions' ? 'text-[#C9A84C]' : 'text-gray-300'}`}>
+                    <Key size={18} /> My Subscriptions
+                  </Link>
+
+                  <Link href="/dashboard/cards" onClick={() => setIsMobileMenuOpen(false)} className={`text-base font-medium flex items-center gap-2 ${pathname === '/dashboard/cards' ? 'text-[#C9A84C]' : 'text-gray-300'}`}>
+                    <CreditCard size={18} /> Payment Methods
+                  </Link>
+                </>
               )}
-              
+
               {(userRoleDb === 'host' || isAdmin) && (
-              <Link href="/dashboard" onClick={() => setIsMobileMenuOpen(false)} className={`text-base font-medium flex items-center gap-2 ${pathname === '/dashboard' ? 'text-[#C9A84C]' : 'text-gray-300'}`}>
-                <LayoutDashboard size={18} /> Host Dashboard
-              </Link>
+                <Link href="/dashboard" onClick={() => setIsMobileMenuOpen(false)} className={`text-base font-medium flex items-center gap-2 ${pathname === '/dashboard' ? 'text-[#C9A84C]' : 'text-gray-300'}`}>
+                  <LayoutDashboard size={18} /> Host Dashboard
+                </Link>
               )}
-              
+
               <Link href="/create-pool" onClick={() => setIsMobileMenuOpen(false)} className="text-base font-medium flex items-center gap-2 text-gray-300">
                 <Plus size={18} /> Create Pool
               </Link>
