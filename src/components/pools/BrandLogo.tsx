@@ -1,30 +1,49 @@
 'use client'
 
-import { useState } from 'react'
 import { Tv } from 'lucide-react'
+import { FaSpotify, FaAmazon, FaApple, FaYoutube } from 'react-icons/fa'
 
-const EXACT_LOGOS: Record<string, string> = {
-  'primevideo.com': 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/11/Amazon_Prime_Video_logo.svg/1024px-Amazon_Prime_Video_logo.svg.png',
-  'dstv.com': 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/DStv_Logo_2020.svg/1024px-DStv_Logo_2020.svg.png'
-}
+export function BrandLogo({ domain, name, size = 28 }: { domain?: string | null, name: string, size?: number }) {
+  const normalized = name.toLowerCase()
 
-export function BrandLogo({ domain, name, size = 28 }: { domain: string | null, name: string, size?: number }) {
-  const [error, setError] = useState(!domain)
-
-  if (error || !domain) {
-    return <Tv size={size} className="text-gray-400" />
+  if (normalized.includes('spotify')) {
+    return <FaSpotify size={size} color="#1DB954" className="drop-shadow-sm" />
+  }
+  
+  if (normalized.includes('amazon') || normalized.includes('prime')) {
+    return <FaAmazon size={size} color="#00A8E1" className="drop-shadow-sm" />
+  }
+  
+  if (normalized.includes('apple')) {
+    return <FaApple size={size} color="#FFFFFF" className="drop-shadow-sm" />
+  }
+  
+  if (normalized.includes('youtube')) {
+    return <FaYoutube size={size} color="#FF0000" className="drop-shadow-sm" />
+  }
+  
+  if (normalized.includes('dstv')) {
+    return (
+      <div 
+        className="flex items-center justify-center bg-gradient-to-br from-[#00A1DF] to-[#005a8f] rounded shadow-sm leading-none border border-white/10"
+        style={{ width: size * 1.5, height: size * 0.8, fontSize: size * 0.45 }}
+      >
+        <span className="text-white font-black tracking-tighter drop-shadow-md">DStv</span>
+      </div>
+    )
+  }
+  
+  if (normalized.includes('netflix')) {
+    return (
+      <div 
+        className="flex items-center justify-center leading-none"
+        style={{ width: size, height: size, fontSize: size * 0.9 }}
+      >
+        <span className="text-[#E50914] font-black tracking-tighter drop-shadow-md" style={{ fontFamily: 'Arial, sans-serif' }}>N</span>
+      </div>
+    )
   }
 
-  const finalSrc = domain ? (EXACT_LOGOS[domain] || `https://icon.horse/icon/${domain}`) : "";
-
-  return (
-    <div className="relative w-full h-full flex items-center justify-center p-0.5">
-      <img 
-        src={finalSrc} 
-        alt={name} 
-        className="object-contain max-w-full max-h-full rounded-lg"
-        onError={() => setError(true)}
-      />
-    </div>
-  )
+  // Fallback for custom pools
+  return <Tv size={size} className="text-gray-400" />
 }
