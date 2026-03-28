@@ -87,6 +87,7 @@ export function CreatePoolWizard({ hostId }: { hostId: string }) {
         category,
         price_per_seat: price,
         max_seats: maxSeats,
+        current_seats: 0, // 🔥 EXPLICITLY set to 0 so the pool starts completely empty
         is_public: isPublic,
         status: 'active',
         invite_token: !isPublic ? Array.from(crypto.getRandomValues(new Uint8Array(32)), byte => byte.toString(16).padStart(2, '0')).join('') : null

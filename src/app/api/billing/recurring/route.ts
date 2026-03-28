@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { handleFailedCharge } from '@/lib/billing'
 import { chargeAuthorization } from '@/lib/paystack'
+import { sendEmail } from '@/lib/emails'
 
 // Use service role for cron jobs to bypass RLS
 const supabase = createClient(
@@ -74,11 +75,38 @@ export async function GET(req: Request) {
           })
           .eq('id', member.id)
 
-        await handleFailedCharge(member.id, member.profiles.email, member.pools.service_name)
+        // 🔥 HOST EVICTION NOTIFICATION 🔥
+        if (nextStatus === 'cancelled') {
+           const { data: poolData } = await supabase.from('pools').select('host_id').eq('id', member.pool_id).single()
+           if (poolData?.host_id) {
+              const { data: hostProfile } = await supabase.from('profiles').select('email').eq('id', poolData.host_id).single()
+              
+              const serviceName = Array.isArray(member.pools) ? member.pools[0]?.service_name : (member.pools as any)?.service_name;
+              const memberEmail = Array.isArray(member.profiles) ? member.profiles[0]?.email : (member.profiles as any)?.email;
+
+              if (hostProfile?.email && serviceName && memberEmail) {
+                  console.log(`[CRON] Member ${memberEmail} kicked out. Emailing Host ${hostProfile.email} to evict them.`)
+                  await sendEmail({
+                     to: hostProfile.email,
+                     subject: `Action Required: Evict Member from ${serviceName}`,
+                     template: 'HOST_MEMBER_EVICTED',
+                     data: { poolName: serviceName, memberEmail }
+                  })
+              }
+           }
+        }
+
+        const memberEmail = Array.isArray(member.profiles) ? member.profiles[0]?.email : (member.profiles as any)?.email;
+        const serviceName = Array.isArray(member.pools) ? member.pools[0]?.service_name : (member.pools as any)?.service_name;
+        
+        await handleFailedCharge(member.id, memberEmail, serviceName)
         results.push({ id: member.id, status: 'failed', retry_count: nextRetryCount })
       }
     } catch (error) {
-      await handleFailedCharge(member.id, member.profiles.email, member.pools.service_name)
+      const memberEmail = Array.isArray(member.profiles) ? member.profiles[0]?.email : (member.profiles as any)?.email;
+      const serviceName = Array.isArray(member.pools) ? member.pools[0]?.service_name : (member.pools as any)?.service_name;
+
+      await handleFailedCharge(member.id, memberEmail, serviceName)
       results.push({ id: member.id, status: 'error' })
     }
   }

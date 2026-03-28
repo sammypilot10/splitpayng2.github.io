@@ -43,10 +43,20 @@ export async function POST(request: Request) {
         .update({ balance: 0 })
         .eq('id', user.id)
       
+      // 🔥 FIX: Log the fake test withdrawal directly into the 'payouts' table
+      const mockRef = `mock_test_ref_${Date.now()}`
+      await (supabase.from('payouts') as any)
+        .insert({
+          user_id: user.id,
+          amount: withdrawAmount,
+          status: 'completed',
+          reference: mockRef
+        })
+
       return NextResponse.json({ 
         success: true, 
         message: 'TEST TRANSFER SUCCESSFUL!',
-        reference: 'mock_test_ref_12345',
+        reference: mockRef,
         amount: withdrawAmount
       })
     }
@@ -102,6 +112,15 @@ export async function POST(request: Request) {
     await (supabase.from('profiles') as any)
       .update({ balance: 0 })
       .eq('id', user.id)
+
+    // 🔥 FIX: Log the live Paystack withdrawal directly into the 'payouts' table
+    await (supabase.from('payouts') as any)
+      .insert({
+        user_id: user.id,
+        amount: withdrawAmount,
+        status: 'pending', // Paystack handles asynchronous clearing, but 'pending' shows in History
+        reference: transferData.data.reference
+      })
 
     return NextResponse.json({ 
       success: true, 

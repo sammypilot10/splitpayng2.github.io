@@ -7,7 +7,7 @@ const resend = new Resend(process.env.RESEND_API_KEY || 'dummy_key')
 interface EmailPayload {
   to: string;
   subject: string;
-  template: 'MEMBER_JOINED' | 'PAYMENT_FAILED' | 'PAYMENT_FAILED_HOST' | 'ACCESS_CONFIRMED' | 'DISPUTE_RAISED' | 'WELCOME_USER' | 'UPCOMING_RENEWAL';
+  template: 'MEMBER_JOINED' | 'PAYMENT_FAILED' | 'PAYMENT_FAILED_HOST' | 'ACCESS_CONFIRMED' | 'DISPUTE_RAISED' | 'WELCOME_USER' | 'UPCOMING_RENEWAL' | 'HOST_MEMBER_EVICTED';
   data?: any; // Made optional just in case an email doesn't need extra data
 }
 
@@ -102,6 +102,20 @@ export async function sendEmail({ to, subject, template, data }: EmailPayload) {
             <a href="https://splitpay.ng/dashboard/cards" style="background-color: #0A0F1E; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold;">Manage Card</a>
           </div>
           <p style="font-size: 14px; color: #666;">Cheers,<br>The SplitPayNG Team</p>
+        </div>`
+      break;
+
+    // 🔥 NEW: Urgent Notification to Host when a member is evicted
+    case 'HOST_MEMBER_EVICTED':
+      html = `
+        <div style="font-family: Arial, sans-serif; color: #0A0F1E; padding: 30px; border: 1px solid #ff4444; border-radius: 12px; max-width: 600px; margin: 0 auto; background-color: #fffafb;">
+          <h2 style="color: #E53E3E;">Action Required: Evict Member</h2>
+          <p style="font-size: 16px;">A member in your <strong>${data?.poolName}</strong> pool has failed to pay their subscription for 3 consecutive days. They have formally been kicked out of the pool.</p>
+          <p style="font-size: 16px;"><strong>Member Email:</strong> ${data?.memberEmail}</p>
+          <div style="background: #E53E3E; color: white; padding: 15px; border-radius: 8px; margin: 20px 0; font-weight: bold;">
+            CRITICAL: Please log into ${data?.poolName} and change your password immediately to revoke their access.
+          </div>
+          <p style="font-size: 16px;">After changing your password, remember to update it on the SplitPayNG Host Dashboard so your paying members can regain access.</p>
         </div>`
       break;
 
