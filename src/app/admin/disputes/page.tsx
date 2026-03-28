@@ -41,7 +41,8 @@ export default function AdminRefundsPage() {
         body: JSON.stringify({ memberId, action })
       })
       
-      if (!res.ok) throw new Error('Failed to process action')
+      const responseBody = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(responseBody.error || 'Failed to process action')
       
       alert(`Action successful!`)
       fetchRefunds() 

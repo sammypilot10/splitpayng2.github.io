@@ -76,8 +76,13 @@ export function CreatePoolWizard({ hostId }: { hostId: string }) {
     
     setLoading(true)
     try {
+      // Fetch host profile to attach metadata to the pool
+      const { data: hostProfile } = await (supabase.from('profiles') as any).select('username, whatsapp_number').eq('id', hostId).single()
+
       const poolData: any = {
-        host_id: hostId, // USE THE PROP DIRECTLY, BYPASSING CLIENT AUTH CHECK
+        host_id: hostId, 
+        host_username: hostProfile?.username || null,
+        host_whatsapp: hostProfile?.whatsapp_number || null,
         service_name: serviceName.trim(),
         category,
         price_per_seat: price,

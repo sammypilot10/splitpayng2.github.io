@@ -118,7 +118,7 @@ export default function DashboardPage() {
       <main className="flex-grow max-w-7xl mx-auto w-full px-6 py-12">
         <div className="mb-10">
           <h1 className="text-3xl font-bold text-white tracking-tight">
-            Welcome back, <span className="text-fintech-gold">{profile?.email?.split('@')[0]}</span>
+            Welcome back, <span className="text-fintech-gold">{profile?.username || profile?.email?.split('@')[0]}</span>
           </h1>
           <p className="text-white/50 mt-2">Manage your shared subscriptions and earnings securely.</p>
         </div>

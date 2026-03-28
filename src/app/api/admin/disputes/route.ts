@@ -106,8 +106,7 @@ export async function POST(req: Request) {
         }
         console.log(`[ADMIN] Paystack Refund Successful!`)
       } else {
-        console.error(`[CRITICAL] No original transaction found to refund for Member ${memberId}`)
-        throw new Error("Could not find original transaction reference to refund.")
+        console.warn(`[WARNING] No Paystack transaction found for Member ${memberId}. Forcing Database-only (Offline) refund.`)
       }
 
       // Update DB

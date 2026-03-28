@@ -227,7 +227,14 @@ function SubscriptionsContent() {
                       <BrandLogo name={sub.pools?.service_name || 'Service'} size={24} />
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold text-white">{sub.pools?.service_name || 'Service'}</h3>
+                      <h3 className="text-xl font-bold text-white flex items-center gap-2 flex-wrap">
+                        {sub.pools?.service_name || 'Service'}
+                        {sub.pools?.host_username && (
+                          <span className="text-[10px] bg-white/10 text-white/70 px-2 py-0.5 rounded-md font-medium tracking-wide">
+                            HOST: {sub.pools.host_username}
+                          </span>
+                        )}
+                      </h3>
                       <p className="text-sm font-medium text-fintech-gold">₦{sub.pools?.price_per_seat?.toLocaleString() || '0'} <span className="text-white/50">/ month</span></p>
                     </div>
                   </div>
