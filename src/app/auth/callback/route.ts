@@ -27,7 +27,7 @@ export async function GET(request: Request) {
       if (isBrandNewUser && authData.user.email) {
         await sendEmail({
           to: authData.user.email,
-          subject: 'Welcome to SplitPayNG! 🚀',
+          subject: 'Welcome to SplitPayNG!',
           template: 'WELCOME_USER'
         });
       }

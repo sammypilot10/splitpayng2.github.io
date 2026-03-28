@@ -61,25 +61,32 @@ export default function AdminRefundsPage() {
     { key: 'joined_at', header: 'Date Raised', render: (val: string) => <span className="text-sm text-gray-500">{new Date(val).toLocaleDateString()}</span> },
     { 
       key: 'actions', 
-      header: 'Admin Action', 
+      header: 'Admin Verification & Actions', 
       render: (_: any, row: any) => (
         row.escrow_status === 'disputed' ? (
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
             <Button 
               onClick={() => handleAction(row.id, row.profiles?.email, row.pools?.service_name, 'refund')} 
               isLoading={processingId === row.id}
-              className="bg-red-500 hover:bg-red-600 text-white text-xs py-1.5 px-3 h-auto shadow-sm"
+              className="bg-red-500 hover:bg-red-600 text-white text-[10px] py-1.5 px-3 h-auto shadow-sm tracking-wider uppercase"
             >
-              Refund
+              Refund Member
             </Button>
-            {/* 🔥 THE NEW BUTTON */}
             <Button 
               onClick={() => handleAction(row.id, row.profiles?.email, row.pools?.service_name, 'reject')} 
               isLoading={processingId === row.id}
-              className="bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs py-1.5 px-3 h-auto shadow-sm"
+              className="bg-gray-800 hover:bg-black text-white text-[10px] py-1.5 px-3 h-auto shadow-sm tracking-wider uppercase"
             >
               Reject Dispute
             </Button>
+            {row.host_whatsapp && (
+              <Button 
+                onClick={() => window.open(`https://wa.me/${row.host_whatsapp.replace(/\D/g, '')}?text=Hello,%20this%20is%20SplitPayNG%20Admin.%20There%20is%20an%20active%20dispute%20on%20your%20${encodeURIComponent(row.pools?.service_name)}%20pool.`, '_blank')}
+                className="bg-green-600 hover:bg-green-700 text-white text-[10px] py-1.5 px-3 h-auto shadow-sm tracking-wider uppercase ml-2"
+              >
+                Contact Host
+              </Button>
+            )}
           </div>
         ) : (
           <span className="flex items-center gap-1.5 text-xs font-bold text-gray-400 bg-gray-50 px-3 py-1.5 rounded-full w-fit">

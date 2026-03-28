@@ -6,23 +6,11 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { AppNavbar } from '@/components/layout/AppNavbar'
 import { Button } from '@/components/ui/Button'
-import { Clock, ShieldCheck, ShieldAlert, Key, Lock, Loader2, AlertTriangle, Eye, EyeOff, Copy, Check, Tv } from 'lucide-react'
+import { Clock, ShieldCheck, ShieldAlert, Key, Lock, Loader2, AlertTriangle, Eye, EyeOff, Copy, Check, MessageCircle } from 'lucide-react'
 import { BrandLogo } from '@/components/pools/BrandLogo'
 
-const getServiceBrandDomain = (serviceName: string) => {
-  const normalized = serviceName.toLowerCase();
-  if (normalized.includes('netflix')) return 'netflix.com';
-  if (normalized.includes('spotify')) return 'spotify.com';
-  if (normalized.includes('amazon') || normalized.includes('prime')) return 'primevideo.com';
-  if (normalized.includes('dstv')) return 'dstv.com';
-  if (normalized.includes('apple')) return 'apple.com';
-  if (normalized.includes('youtube')) return 'youtube.com';
-  if (normalized.includes('showmax')) return 'showmax.com';
-  if (normalized.includes('canva')) return 'canva.com';
-  if (normalized.includes('disney')) return 'disneyplus.com';
-  if (normalized.includes('hulu')) return 'hulu.com';
-  return null;
-}
+const ADMIN_WHATSAPP = '2348117060606'
+
 
 function SubscriptionsContent() {
   const [memberships, setMemberships] = useState<any[]>([])
@@ -162,12 +150,38 @@ function SubscriptionsContent() {
 
       if (!res.ok) throw new Error('Failed to raise dispute')
 
-      alert("Dispute raised successfully. An admin will review this shortly.")
+      alert("Dispute raised successfully. You will now be redirected to WhatsApp to provide your proof to the Admin.")
+      
+      const text = encodeURIComponent("Hello Admin, I am raising a dispute for my pool seat.")
+      window.open(`https://wa.me/${ADMIN_WHATSAPP}?text=${text}`, "_blank")
+
       setMemberships(memberships.map(m => 
         m.id === memberId ? { ...m, escrow_status: 'disputed' } : m
       ))
     } catch (err: any) {
       alert("Error raising dispute: " + err.message)
+    } finally {
+      setIsProcessingAction(null)
+    }
+  }
+
+  const handleLeavePool = async (memberId: string) => {
+    if (!window.confirm("Are you sure you want to leave this pool? You will lose access to the credentials permanently, and this action cannot be undone.")) return;
+    
+    setIsProcessingAction(memberId)
+    try {
+      const res = await fetch('/api/memberships/leave', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ memberId })
+      })
+
+      if (!res.ok) throw new Error('Failed to leave pool')
+
+      alert("You have successfully left the pool.")
+      setMemberships(memberships.filter(m => m.id !== memberId))
+    } catch (err: any) {
+      alert("Error leaving pool: " + err.message)
     } finally {
       setIsProcessingAction(null)
     }
@@ -203,14 +217,14 @@ function SubscriptionsContent() {
             const isDecrypting = decryptingIds[sub.id];
             const unlockedCreds = decryptedCreds[sub.id];
             const isProcessing = isProcessingAction === sub.id;
-            const domain = getServiceBrandDomain(sub.pools?.service_name || '');
+
 
             return (
               <div key={sub.id} className="bg-white/5 rounded-3xl p-6 border border-white/10 flex flex-col hover:border-white/20 transition-all">
                 <div className="flex justify-between items-start mb-6">
                   <div className="flex gap-4 items-center">
                     <div className="h-12 w-auto min-w-[3rem] px-2 py-2 bg-white/10 rounded-xl flex items-center justify-center border border-white/5 shadow-inner shrink-0 leading-none">
-                      <BrandLogo domain={domain} name={sub.pools?.service_name || 'Service'} size={24} />
+                      <BrandLogo name={sub.pools?.service_name || 'Service'} size={24} />
                     </div>
                     <div>
                       <h3 className="text-xl font-bold text-white">{sub.pools?.service_name || 'Service'}</h3>
@@ -302,8 +316,17 @@ function SubscriptionsContent() {
                   ) : (
                     <div className="space-y-4">
                       {sub.escrow_status === 'disputed' && (
-                        <div className="bg-red-500/10 border border-red-500/20 p-3 rounded-lg text-xs text-red-200 mb-4">
-                          This subscription is currently under dispute review by an Admin. Access is temporarily suspended.
+                        <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-lg text-xs text-red-200 mb-4 space-y-3">
+                          <p>This subscription is currently under dispute review by an Admin. Access is temporarily suspended.</p>
+                          <button
+                            onClick={() => {
+                              const text = encodeURIComponent(`Hello Admin, I am following up on my dispute for ${sub.pools?.service_name}. My membership ID is ${sub.id}.`)
+                              window.open(`https://wa.me/${ADMIN_WHATSAPP}?text=${text}`, '_blank')
+                            }}
+                            className="w-full flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 px-4 rounded-lg text-xs transition-colors"
+                          >
+                            <MessageCircle size={14} /> Contact Admin on WhatsApp
+                          </button>
                         </div>
                       )}
 
@@ -368,6 +391,19 @@ function SubscriptionsContent() {
                       className="w-full text-xs text-red-500 hover:text-red-700 font-medium flex items-center justify-center gap-1 mt-2 disabled:opacity-50"
                     >
                       <AlertTriangle size={12} /> No, Report Issue (Dispute)
+                    </button>
+                  </div>
+                )}
+                
+                {/* 🔥 Opt-Out Option */}
+                {sub.status === 'active' && (
+                  <div className="pt-4 border-t border-white/10 mt-2">
+                    <button 
+                      onClick={() => handleLeavePool(sub.id)}
+                      disabled={isProcessing}
+                      className="w-full text-xs text-fintech-slate/50 hover:text-red-500 font-medium flex items-center justify-center py-2 transition-colors disabled:opacity-50"
+                    >
+                      {isProcessing ? <Loader2 className="animate-spin" size={14} /> : 'Leave Pool (Opt-Out)'}
                     </button>
                   </div>
                 )}

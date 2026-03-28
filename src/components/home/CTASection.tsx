@@ -54,7 +54,7 @@ export function CTASection() {
 
       <div className="max-w-4xl mx-auto relative z-10 flex flex-col items-center gap-8">
         <div className="cta-item inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold" style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.2)', color: '#D4AF37' }}>
-          🇳🇬 Built for Nigeria
+          Built for Nigeria
         </div>
 
         <h2 className="cta-item font-black text-white leading-[0.92]" style={{ fontSize: 'clamp(3rem, 7vw, 6rem)' }}>

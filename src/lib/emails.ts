@@ -7,8 +7,7 @@ const resend = new Resend(process.env.RESEND_API_KEY || 'dummy_key')
 interface EmailPayload {
   to: string;
   subject: string;
-  // 🔥 ADDED 'WELCOME_USER' to your list of allowed templates!
-  template: 'MEMBER_JOINED' | 'PAYMENT_FAILED' | 'ACCESS_CONFIRMED' | 'DISPUTE_RAISED' | 'WELCOME_USER';
+  template: 'MEMBER_JOINED' | 'PAYMENT_FAILED' | 'PAYMENT_FAILED_HOST' | 'ACCESS_CONFIRMED' | 'DISPUTE_RAISED' | 'WELCOME_USER' | 'UPCOMING_RENEWAL';
   data?: any; // Made optional just in case an email doesn't need extra data
 }
 
@@ -20,7 +19,7 @@ export async function sendEmail({ to, subject, template, data }: EmailPayload) {
     case 'WELCOME_USER':
       html = `
         <div style="font-family: Arial, sans-serif; color: #0A0F1E; padding: 30px; border: 1px solid #eaeaea; border-radius: 12px; max-width: 600px; margin: 0 auto;">
-          <h1 style="color: #C9A84C; margin-bottom: 10px;">Welcome to SplitPayNG! 🚀</h1>
+          <h1 style="color: #C9A84C; margin-bottom: 10px;">Welcome to SplitPayNG!</h1>
           <p style="font-size: 16px; line-height: 1.5;">We are thrilled to have you on board.</p>
           <p style="font-size: 16px; line-height: 1.5;">With SplitPayNG, you can finally stop overpaying for subscriptions. Browse available pools to get premium access for a fraction of the cost, or become a Host and start earning real cash from your unused seats!</p>
           <div style="margin: 30px 0;">
@@ -34,7 +33,7 @@ export async function sendEmail({ to, subject, template, data }: EmailPayload) {
     case 'MEMBER_JOINED':
       html = `
         <div style="font-family: Arial, sans-serif; color: #0A0F1E; padding: 30px; border: 1px solid #eaeaea; border-radius: 12px; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #10B981;">Cha-Ching! New Member! 🎉</h2>
+          <h2 style="color: #10B981;">New Member Joined!</h2>
           <p style="font-size: 16px;">Great news! Someone just joined your <strong>${data?.poolName}</strong> pool.</p>
           <p style="font-size: 16px;">Their payment has been secured in Escrow. Once they test your vault credentials and confirm access, the funds will be released to your available balance.</p>
           <p style="font-size: 14px; color: #666;">Keep up the great work!</p>
@@ -43,10 +42,26 @@ export async function sendEmail({ to, subject, template, data }: EmailPayload) {
 
     case 'PAYMENT_FAILED':
       html = `
-        <div style="font-family: sans-serif; color: #0A0F1E;">
-          <h2>Payment Action Required</h2>
-          <p>We couldn't process your renewal for <strong>${data?.poolName}</strong>.</p>
-          <p>Please update your payment method within 48 hours to avoid losing access.</p>
+        <div style="font-family: Arial, sans-serif; color: #0A0F1E; padding: 30px; border: 1px solid #eaeaea; border-radius: 12px; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #E53E3E;">Payment Failed</h2>
+          <p style="font-size: 16px;">We couldn't process your renewal for <strong>${data?.poolName}</strong>.</p>
+          <p style="font-size: 16px;">You have a <strong>48-hour grace period</strong> to update your payment method before losing access.</p>
+          <div style="margin: 24px 0;">
+            <a href="https://splitpay.ng/dashboard/cards" style="background-color: #E53E3E; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold;">Update Card Now</a>
+          </div>
+          <p style="font-size: 14px; color: #666;">If you believe this is an error, please contact support.</p>
+        </div>`
+      break;
+
+    // 🔥 NEW: Notify the Host when a member's payment fails
+    case 'PAYMENT_FAILED_HOST':
+      html = `
+        <div style="font-family: Arial, sans-serif; color: #0A0F1E; padding: 30px; border: 1px solid #eaeaea; border-radius: 12px; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #F59E0B;">Member Payment Failed</h2>
+          <p style="font-size: 16px;">A member's renewal payment for your <strong>${data?.poolName}</strong> pool has failed.</p>
+          <p style="font-size: 16px;">Their seat is being held in a <strong>48-hour grace period</strong>. If they do not update their card within 48 hours, the seat will be automatically opened to the public.</p>
+          <p style="font-size: 16px;">No action is needed from you right now. We'll keep you updated.</p>
+          <p style="font-size: 14px; color: #666;">— The SplitPayNG Team</p>
         </div>`
       break;
 
@@ -70,6 +85,23 @@ export async function sendEmail({ to, subject, template, data }: EmailPayload) {
             <li>Click "Update Vault Credentials" to fix any typos or reset the password.</li>
           </ol>
           <p>If the member is lying, our Admin team will investigate and resolve this.</p>
+        </div>`
+      break;
+
+    // 🔥 NEW: Upcoming renewal reminder (3 days before billing)
+    case 'UPCOMING_RENEWAL':
+      html = `
+        <div style="font-family: Arial, sans-serif; color: #0A0F1E; padding: 30px; border: 1px solid #eaeaea; border-radius: 12px; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #C9A84C;">Upcoming Subscription Renewal</h2>
+          <p style="font-size: 16px;">Your <strong>${data?.poolName}</strong> subscription will be auto-renewed in <strong>3 days</strong> on <strong>${data?.billingDate}</strong>.</p>
+          <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin: 20px 0;">
+            <p style="margin: 0; font-size: 14px;"><strong>Amount:</strong> ₦${data?.amount?.toLocaleString()}</p>
+          </div>
+          <p style="font-size: 16px;">Make sure your card is up to date to avoid service interruption.</p>
+          <div style="margin: 24px 0;">
+            <a href="https://splitpay.ng/dashboard/cards" style="background-color: #0A0F1E; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold;">Manage Card</a>
+          </div>
+          <p style="font-size: 14px; color: #666;">Cheers,<br>The SplitPayNG Team</p>
         </div>`
       break;
 

@@ -10,8 +10,11 @@ import { Building2, CreditCard, ShieldCheck, Loader2, AlertCircle, ChevronDown, 
 export default function PayoutSettingsPage() {
   const [accountNumber, setAccountNumber] = useState('')
   const [bankCode, setBankCode] = useState('')
-  
   const [accountName, setAccountName] = useState('')
+  
+  // Profile States
+  const [username, setUsername] = useState('')
+  const [whatsappNumber, setWhatsappNumber] = useState('')
   const [isVerifying, setIsVerifying] = useState(false)
   const [error, setError] = useState('')
 
@@ -22,9 +25,26 @@ export default function PayoutSettingsPage() {
   
   const [isSaving, setIsSaving] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
+  const [isProfileSaving, setIsProfileSaving] = useState(false)
+  const [isProfileSuccess, setIsProfileSuccess] = useState(false)
   
   const supabase = createClient()
   const router = useRouter()
+
+  // Fetch initial profile data
+  useEffect(() => {
+    const fetchProfile = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const { data } = await (supabase.from('profiles') as any).select('username, whatsapp_number').eq('id', user.id).single()
+        if (data) {
+          setUsername(data.username || '')
+          setWhatsappNumber(data.whatsapp_number || '')
+        }
+      }
+    }
+    fetchProfile()
+  }, [])
 
   // 1. Fetch the live list of banks
   useEffect(() => {
@@ -107,6 +127,31 @@ export default function PayoutSettingsPage() {
     }
   }
 
+  const handleSaveProfileDetails = async () => {
+    setIsProfileSaving(true)
+    setError('')
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error("You must be logged in to save profile details.")
+
+      const { error: dbError } = await (supabase.from('profiles') as any)
+        .update({
+          username: username,
+          whatsapp_number: whatsappNumber
+        })
+        .eq('id', user.id)
+
+      if (dbError) throw dbError
+
+      setIsProfileSuccess(true)
+      setTimeout(() => setIsProfileSuccess(false), 3000)
+    } catch (err: any) {
+      setError(err.message || 'Failed to save profile details.')
+    } finally {
+      setIsProfileSaving(false)
+    }
+  }
+
   const filteredBanks = banks.filter(bank => 
     bank.name.toLowerCase().includes(searchTerm.toLowerCase())
   )
@@ -117,9 +162,63 @@ export default function PayoutSettingsPage() {
       
       <main className="max-w-3xl mx-auto px-6 py-12">
         <div className="mb-10">
-          <h1 className="text-3xl font-bold text-fintech-navy tracking-tight">Payout Settings</h1>
-          <p className="text-gray-500 mt-2">Link your Nigerian bank account to withdraw your SplitPayNG earnings.</p>
+          <h1 className="text-3xl font-bold text-fintech-navy tracking-tight">Account Settings</h1>
+          <p className="text-gray-500 mt-2">Manage your Host Identity and Bank Payout details securely.</p>
         </div>
+
+        {/* --- 🔥 NEW PROFILE CREDENTIALS SECTION --- */}
+        <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 mb-8">
+          <div className="flex items-center gap-3 mb-8 pb-6 border-b border-gray-100">
+            <div className="bg-fintech-gold/20 p-3 rounded-full text-fintech-gold">
+              <ShieldCheck size={24} />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-fintech-navy">Host Profile</h2>
+              <p className="text-sm text-gray-500">Required credentials to host a public pool.</p>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            <div>
+              <label className="block text-sm font-bold text-fintech-navy mb-2">Vendor Username</label>
+              <input 
+                type="text" 
+                className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-fintech-navy outline-none transition-all font-medium"
+                placeholder="e.g. SamuelTech"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)} 
+              />
+              <p className="text-xs text-gray-400 mt-2">This is the trusted name members will see on the marketplace.</p>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-bold text-fintech-navy mb-2">WhatsApp Number</label>
+              <input 
+                type="text" 
+                className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-fintech-navy outline-none transition-all font-medium"
+                placeholder="e.g. 2348123456789"
+                value={whatsappNumber}
+                onChange={(e) => setWhatsappNumber(e.target.value.replace(/\D/g, ''))} 
+              />
+              <p className="text-xs text-gray-400 mt-2">Include area code (e.g. 234). Used strictly by Support/Admins for dispute resolution.</p>
+            </div>
+
+            <Button 
+              onClick={handleSaveProfileDetails}
+              disabled={!username || !whatsappNumber || isProfileSaving} 
+              className="w-full bg-fintech-navy hover:bg-fintech-navy/90 text-white py-6 mt-4 disabled:opacity-50 transition-all flex justify-center items-center font-bold"
+            >
+              {isProfileSaving ? (
+                <><Loader2 className="animate-spin mr-2" size={18} /> Saving Profile...</>
+              ) : isProfileSuccess ? (
+                "Profile Saved Successfully!"
+              ) : (
+                "Save Host Details"
+              )}
+            </Button>
+          </div>
+        </div>
+        {/* --- END PROFILE LOGIC --- */}
 
         <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100">
           <div className="flex items-center gap-3 mb-8 pb-6 border-b border-gray-100">

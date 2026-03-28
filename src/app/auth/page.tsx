@@ -5,7 +5,7 @@ import { Suspense, useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/Button'
-import { Eye, EyeOff, ShieldCheck, Zap, Lock, Mail, ArrowLeft } from 'lucide-react'
+import { Eye, EyeOff, ShieldCheck, Zap, Lock, Mail, ArrowLeft, AlertTriangle } from 'lucide-react'
 import Link from 'next/link'
 
 // We separate the form logic into its own component so we can wrap it in Suspense
@@ -105,7 +105,7 @@ function AuthForm() {
       
       {error && (
         <div className="mb-6 p-4 bg-red-50/50 border border-red-100 text-red-600 rounded-xl text-sm flex items-start gap-2">
-          <span className="mt-0.5">⚠️</span>
+          <AlertTriangle size={16} className="mt-0.5 flex-shrink-0" />
           <span>{error}</span>
         </div>
       )}

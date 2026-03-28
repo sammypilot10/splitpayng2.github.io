@@ -13,9 +13,13 @@ export default async function CreatePoolPage() {
   // 🔥 MANDATORY PAYOUT ACCOUNT GUARD
   if (user) {
     const { data: profile } = await (supabase.from('profiles') as any)
-      .select('account_number, bank_code')
+      .select('account_number, bank_code, username, whatsapp_number')
       .eq('id', user.id)
       .single()
+
+    if (!profile?.username || !profile?.whatsapp_number) {
+      redirect('/dashboard/settings?message=Please set your Vendor Username and WhatsApp number before creating a pool')
+    }
 
     if (!profile?.account_number || !profile?.bank_code) {
       redirect('/dashboard/settings?message=Please set up your payout account before creating a pool')

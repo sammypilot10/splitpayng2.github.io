@@ -2,6 +2,7 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
+import { AlertTriangle } from 'lucide-react'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 
@@ -23,7 +24,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <div className="max-w-7xl mx-auto px-6 text-center flex flex-col items-center">
             {/* Prominent Legal Disclaimer (Non-Negotiable) */}
             <div className="inline-flex items-center gap-2 bg-fintech-gold/10 border border-fintech-gold/30 text-fintech-gold text-xs py-3 px-6 rounded-xl font-medium mb-6 max-w-2xl text-left sm:text-center leading-relaxed">
-              <span className="text-lg">⚠️</span>
+              <AlertTriangle size={16} className="flex-shrink-0" />
               <span>
                 <strong>Disclaimer:</strong> Account sharing may violate service provider terms — use at your own risk. SplitPayNG acts solely as an escrow and sharing facilitator.
               </span>

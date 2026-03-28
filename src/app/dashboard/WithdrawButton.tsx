@@ -26,7 +26,7 @@ export default function WithdrawButton({ activeEarnings }: { activeEarnings: num
       setSuccessMessage(`Success! ₦${amount.toLocaleString()} is on the way to your bank.`)
 
     } catch (err: any) {
-      alert("🚨 Transfer Failed: " + err.message)
+      alert("Transfer Failed: " + err.message)
     } finally {
       setIsWithdrawing(false)
     }

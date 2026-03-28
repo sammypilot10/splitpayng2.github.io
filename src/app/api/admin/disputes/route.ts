@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
+import { refundTransaction } from '@/lib/paystack'
 
 // Initialize Resend
 const resend = new Resend(process.env.RESEND_API_KEY)
@@ -29,14 +30,22 @@ export async function GET() {
         escrow_status,
         joined_at,
         profiles ( email ),
-        pools ( service_name, price_per_seat )
+        pools ( service_name, price_per_seat, host_id )
       `)
       .in('escrow_status', ['disputed', 'refunded'])
       .order('joined_at', { ascending: false })
 
     if (error) throw error
 
-    return NextResponse.json({ disputes: disputes || [] })
+    const enrichedDisputes = await Promise.all((disputes || []).map(async (d: any) => {
+        if (d.pools?.host_id) {
+            const { data: host } = await supabaseAdmin.from('profiles').select('whatsapp_number').eq('id', d.pools.host_id).single()
+            return { ...d, host_whatsapp: host?.whatsapp_number }
+        }
+        return d
+    }))
+
+    return NextResponse.json({ disputes: enrichedDisputes })
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
@@ -78,6 +87,29 @@ export async function POST(req: Request) {
 
     // 2. Database Updates & Email Content Prep
     if (action === 'refund') {
+      // 🔥 FIX: Find the original transaction reference to refund
+      const { data: tx } = await supabaseAdmin
+        .from('transactions')
+        .select('reference')
+        .eq('pool_id', member.pool_id)
+        .eq('user_id', member.member_id)
+        .eq('status', 'success')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single()
+
+      if (tx?.reference) {
+        console.log(`[ADMIN] Calling Paystack Refund API for Reference: ${tx.reference}`)
+        const refundRes = await refundTransaction(tx.reference)
+        if (!refundRes.status) {
+          throw new Error(`Paystack Refund Failed: ${refundRes.message}`)
+        }
+        console.log(`[ADMIN] Paystack Refund Successful!`)
+      } else {
+        console.error(`[CRITICAL] No original transaction found to refund for Member ${memberId}`)
+        throw new Error("Could not find original transaction reference to refund.")
+      }
+
       // Update DB
       await supabaseAdmin.from('pool_members').update({ escrow_status: 'refunded', status: 'closed' } as any).eq('id', memberId)
       if (pool && pool.current_seats > 0) {
@@ -93,6 +125,21 @@ export async function POST(req: Request) {
     else if (action === 'reject') {
       // Update DB
       await supabaseAdmin.from('pool_members').update({ escrow_status: 'confirmed', status: 'active' } as any).eq('id', memberId)
+
+      // 🔥 FIX: Credit the Host's balance with 80% (20% platform fee)
+      // This is needed because the member disputed instead of confirming,
+      // so the confirm-access flow never ran and the host was never paid.
+      if (pool && pool.host_id && pool.price_per_seat) {
+        const PLATFORM_FEE_PERCENT = 0.20;
+        const platformFee = Math.round(pool.price_per_seat * PLATFORM_FEE_PERCENT);
+        const hostPayout = pool.price_per_seat - platformFee;
+
+        const { data: hostBalance } = await supabaseAdmin.from('profiles').select('balance').eq('id', pool.host_id).single();
+        const newBalance = (hostBalance?.balance || 0) + hostPayout;
+        await supabaseAdmin.from('profiles').update({ balance: newBalance }).eq('id', pool.host_id);
+        
+        console.log(`[ADMIN] Dispute rejected. Credited Host ${pool.host_id} with ₦${hostPayout} (80% of ₦${pool.price_per_seat}). New balance: ₦${newBalance}`);
+      }
 
       // Email Content
       memberSubject = `Dispute Update: Claim Rejected for ${serviceName}`

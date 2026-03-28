@@ -22,7 +22,7 @@ export default async function Home({ searchParams }: { searchParams: { category?
 
   let query = supabase
     .from('pools')
-    .select('*')
+    .select('*, profiles(username)')
     .eq('is_public', true)
     .order('created_at', { ascending: false })
 
@@ -77,7 +77,7 @@ export default async function Home({ searchParams }: { searchParams: { category?
 
       <footer className="py-10 px-6 text-center" style={{ borderTop: '1px solid rgba(255,255,255,0.04)', background: '#030509' }}>
         <p className="text-sm" style={{ color: 'rgba(255,255,255,0.15)' }}>
-          © 2026 SplitPayNG · Built with ❤️ for Nigeria
+          © 2026 SplitPayNG · Proudly Built for Nigeria
         </p>
       </footer>
     </div>

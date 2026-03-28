@@ -8,28 +8,13 @@ import { Users, Tv, Sparkles } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 
-const getServiceBrandDomain = (serviceName: string) => {
-  const normalized = serviceName.toLowerCase();
-  if (normalized.includes('netflix')) return 'netflix.com';
-  if (normalized.includes('spotify')) return 'spotify.com';
-  if (normalized.includes('amazon') || normalized.includes('prime')) return 'primevideo.com';
-  if (normalized.includes('dstv')) return 'dstv.com';
-  if (normalized.includes('apple')) return 'apple.com';
-  if (normalized.includes('youtube')) return 'youtube.com';
-  if (normalized.includes('showmax')) return 'showmax.com';
-  if (normalized.includes('canva')) return 'canva.com';
-  if (normalized.includes('disney')) return 'disneyplus.com';
-  if (normalized.includes('hulu')) return 'hulu.com';
-  return null;
-}
-
 export default async function BrowsePoolsPage() {
   const supabase = createClient()
 
   // Fetch all pools from the database
   const { data: poolsData } = await supabase
     .from('pools')
-    .select('*')
+    .select('*, profiles(username)')
     .eq('is_public', true)
     .eq('status', 'active')
     .order('created_at', { ascending: false })
@@ -72,12 +57,11 @@ export default async function BrowsePoolsPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {availablePools.map((pool) => {
-                const domain = getServiceBrandDomain(pool.service_name);
                 return (
                   <div key={pool.id} className="bg-white/5 rounded-3xl border border-white/10 p-8 hover:border-white/20 hover:bg-white/10 transition-all flex flex-col h-full group">
                     <div className="flex justify-between items-start mb-6">
                     <div className="h-14 w-auto min-w-[3.5rem] px-3 bg-white/10 rounded-2xl flex items-center justify-center border border-white/5 shadow-inner">
-                      <BrandLogo domain={domain} name={pool.service_name} size={28} />
+                      <BrandLogo name={pool.service_name} size={28} />
                     </div>
                     <div className="bg-white/10 px-3 py-1 rounded-full text-xs font-bold text-gray-300 flex items-center gap-1.5 border border-white/5">
                         <Users size={12} className="text-fintech-gold" />
@@ -87,7 +71,7 @@ export default async function BrowsePoolsPage() {
 
                     <div className="flex-grow">
                       <h2 className="text-2xl font-bold text-white mb-1">{pool.service_name}</h2>
-                      <p className="text-sm text-gray-400 font-medium mb-6">Hosted by Verified Member</p>
+                      <p className="text-sm text-gray-400 font-medium mb-6">Hosted by <span className="text-fintech-gold">@{pool.profiles?.username || 'VerifiedMember'}</span></p>
 
                       <div className="flex items-end gap-1 mb-8">
                         <span className="text-3xl font-bold text-fintech-gold">

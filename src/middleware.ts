@@ -25,7 +25,9 @@ export async function middleware(request: NextRequest) {
   const isAdmin = path.startsWith('/admin')
 
   if ((isProtected || isAdmin) && !user) {
-    return NextResponse.redirect(new URL('/auth', request.url))
+    const authUrl = new URL('/auth', request.url)
+    authUrl.searchParams.set('returnTo', path)
+    return NextResponse.redirect(authUrl)
   }
 
   if (user) {

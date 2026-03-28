@@ -1,16 +1,20 @@
 // src/lib/billing.ts
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@supabase/supabase-js'
 import { sendEmail } from '@/lib/emails'
 
+// Use service role client to bypass RLS — this runs from cron jobs with no user session
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
+
 export async function handleFailedCharge(memberId: string, userEmail: string, poolName: string) {
-  const supabase = createClient()
-  
-  // The Master Key: (supabase.from(...) as any) bypasses the strict schema check
-  await (supabase.from('pool_members') as any)
-    .update({ status: 'past_due' })
+  await supabaseAdmin
+    .from('pool_members')
+    .update({ status: 'past_due' } as any)
     .eq('id', memberId)
 
-  await (supabase.from('audit_logs') as any).insert({
+  await (supabaseAdmin.from('audit_logs') as any).insert({
     action: 'SYSTEM_CHARGE_FAILED',
     entity_table: 'pool_members',
     entity_id: memberId,

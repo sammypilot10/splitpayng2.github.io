@@ -41,17 +41,23 @@ export async function POST(req: Request) {
             const hostId = exactPool.host_id;
             const price = exactPool.price_per_seat;
             
-            console.log(`[LEDGER] Adding ₦${price} to Host ${hostId} available balance...`);
+            // 🔥 PLATFORM FEE: Deduct exactly 20%, Host receives 80%
+            const PLATFORM_FEE_PERCENT = 0.20;
+            const platformFee = Math.round(price * PLATFORM_FEE_PERCENT);
+            const hostPayout = price - platformFee;
+            
+            console.log(`[LEDGER] Price: ₦${price} | Platform Fee (20%): ₦${platformFee} | Host Payout (80%): ₦${hostPayout}`);
+            console.log(`[LEDGER] Adding ₦${hostPayout} to Host ${hostId} available balance...`);
             
             const { data: hostProfile } = await supabaseAdmin.from('profiles').select('balance').eq('id', hostId).single();
-            const newBalance = (hostProfile?.balance || 0) + price;
+            const newBalance = (hostProfile?.balance || 0) + hostPayout;
             
             const { error: walletError } = await supabaseAdmin.from('profiles').update({ balance: newBalance }).eq('id', hostId);
             
             if (walletError) {
               console.error("[CRITICAL] Failed to credit wallet!", walletError);
             } else {
-              console.log(`[LEDGER] SUCCESS! Host wallet augmented to: ₦${newBalance}`);
+              console.log(`[LEDGER] SUCCESS! Host wallet updated to: ₦${newBalance} (after 20% platform fee)`);
             }
           } else {
             console.error(`[CRITICAL] Failed to resolve exact pool config. PoolID: ${member.pool_id}. Error:`, poolError);
@@ -69,7 +75,7 @@ export async function POST(req: Request) {
       if (hostEmail) {
         await sendEmail({
           to: hostEmail, // NOTE: In Resend test mode, this only works if hostEmail is your own email!
-          subject: `🚨 Action Required: Dispute on your ${serviceName} pool`,
+          subject: `Action Required: Dispute on your ${serviceName} pool`,
           template: 'DISPUTE_RAISED',
           data: { poolName: serviceName }
         });

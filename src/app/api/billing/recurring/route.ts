@@ -10,7 +10,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-export async function POST(req: Request) {
+export async function GET(req: Request) {
   // 1. Secure the endpoint (Only our Cron service can call this)
   const authHeader = req.headers.get('authorization')
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
