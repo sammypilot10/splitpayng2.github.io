@@ -110,6 +110,22 @@ export async function POST(req: Request) {
       }
 
       // Update DB
+      // 🔥 POST-PAYOUT CLAWBACK LOGIC 🔥
+      // If the member is already "active", it means the Host ALREADY got paid 80% of this money.
+      // We must deduct it from their internal platform balance to avoid the platform taking a total loss.
+      if (member.status === 'active' && pool && pool.host_id && pool.price_per_seat) {
+        const PLATFORM_FEE_PERCENT = 0.20;
+        const platformFee = Math.round(pool.price_per_seat * PLATFORM_FEE_PERCENT);
+        const hostPayout = pool.price_per_seat - platformFee;
+
+        // Forcefully debit the Host's balance (even if it goes negative)
+        const { data: hostBalance } = await supabaseAdmin.from('profiles').select('balance').eq('id', pool.host_id).single();
+        const clawbackBalance = (hostBalance?.balance || 0) - hostPayout;
+        await supabaseAdmin.from('profiles').update({ balance: clawbackBalance }).eq('id', pool.host_id);
+
+        console.log(`[CLAWBACK] Member ${memberId} refunded post-payout! Seized ₦${hostPayout} from Host ${pool.host_id}. New Balance is ₦${clawbackBalance}.`);
+      }
+
       await supabaseAdmin.from('pool_members').update({ escrow_status: 'refunded', status: 'closed' } as any).eq('id', memberId)
       if (pool && pool.current_seats > 0) {
         await supabaseAdmin.from('pools').update({ current_seats: pool.current_seats - 1 }).eq('id', member.pool_id)

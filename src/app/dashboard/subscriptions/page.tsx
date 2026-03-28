@@ -382,6 +382,7 @@ function SubscriptionsContent() {
                   )}
                 </div>
 
+                {/* 🔥 ESCROW PAYOUT CONFIRMATION BUTTONS */}
                 {sub.status === 'escrow' && sub.escrow_status !== 'disputed' && sub.escrow_status !== 'refunded' && (
                   <div className="space-y-3 pt-4 border-t border-white/10 mt-2">
                     <p className="text-xs text-center text-white/50 font-medium">Do the credentials work?</p>
@@ -398,6 +399,19 @@ function SubscriptionsContent() {
                       className="w-full text-xs text-red-500 hover:text-red-700 font-medium flex items-center justify-center gap-1 mt-2 disabled:opacity-50"
                     >
                       <AlertTriangle size={12} /> No, Report Issue (Dispute)
+                    </button>
+                  </div>
+                )}
+
+                {/* 🔥 ACTIVE PAYOUT CLAWBACK BUTTON */}
+                {sub.status === 'active' && sub.escrow_status !== 'disputed' && sub.escrow_status !== 'refunded' && (
+                  <div className="space-y-3 pt-4 border-t border-white/10 mt-2">
+                    <button 
+                      onClick={() => handleDispute(sub.id)}
+                      disabled={isProcessing}
+                      className="w-full text-xs text-red-500 hover:text-red-700 font-medium flex items-center justify-center gap-1 py-2 disabled:opacity-50"
+                    >
+                      <AlertTriangle size={14} className="mr-1" /> Password Stopped Working? Report Fraud
                     </button>
                   </div>
                 )}
