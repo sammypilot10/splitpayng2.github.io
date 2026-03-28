@@ -75,9 +75,15 @@ export async function GET(req: Request) {
           })
           .eq('id', member.id)
 
-        // 🔥 HOST EVICTION NOTIFICATION 🔥
+        // 🔥 HOST EVICTION NOTIFICATION & CAPACITY UPDATE 🔥
         if (nextStatus === 'cancelled') {
-           const { data: poolData } = await supabase.from('pools').select('host_id').eq('id', member.pool_id).single()
+           // FREE UP THE SEAT
+           const { data: poolData } = await supabase.from('pools').select('id, host_id, current_seats, is_public').eq('id', member.pool_id).single()
+           
+           if (poolData && poolData.current_seats > 0) {
+              await supabase.from('pools').update({ current_seats: poolData.current_seats - 1 }).eq('id', member.pool_id)
+           }
+
            if (poolData?.host_id) {
               const { data: hostProfile } = await supabase.from('profiles').select('email').eq('id', poolData.host_id).single()
               
