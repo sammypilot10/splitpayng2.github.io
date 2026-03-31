@@ -267,12 +267,18 @@ function SubscriptionsContent() {
                     </div>
                   </div>
                   
-                  {/* 🔥 THE FIX: If they are refunded, lock them out of the vault entirely! */}
-                  {sub.escrow_status === 'refunded' ? (
+                  {/* 🔥 THE FIX: If they are refunded, cancelled, or past due, lock them out of the vault entirely! */}
+                  {sub.escrow_status === 'refunded' || sub.status === 'cancelled' || sub.status === 'past_due' ? (
                     <div className="bg-gray-500/10 border border-gray-500/20 p-6 rounded-xl text-center mt-2">
                       <Lock size={24} className="mx-auto text-gray-400 mb-2" />
                       <p className="text-sm text-gray-300 font-medium">Access Revoked</p>
-                      <p className="text-xs text-gray-400 mt-1">This subscription was refunded. You no longer have access to this vault.</p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        {sub.status === 'past_due' 
+                          ? 'Your subscription is past due. Please update your payment method to restore access.'
+                          : sub.status === 'cancelled'
+                            ? 'Your subscription has been cancelled. You no longer have access to this vault.'
+                            : 'This subscription was refunded. You no longer have access to this vault.'}
+                      </p>
                     </div>
                   ) : sub.status === 'escrow' && sub.escrow_status !== 'disputed' ? (
                     <div className="space-y-4">
