@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { AppNavbar } from '@/components/layout/AppNavbar'
 import { Button } from '@/components/ui/Button'
-import { Building2, CreditCard, ShieldCheck, Loader2, AlertCircle, ChevronDown, Search, CheckCircle2 } from 'lucide-react'
+import { Building2, CreditCard, ShieldCheck, Loader2, AlertCircle, ChevronDown, Search, CheckCircle2, Phone, AlertTriangle } from 'lucide-react'
 
 export default function PayoutSettingsPage() {
   const [accountNumber, setAccountNumber] = useState('')
@@ -17,6 +17,8 @@ export default function PayoutSettingsPage() {
   const [whatsappNumber, setWhatsappNumber] = useState('')
   const [isVerifying, setIsVerifying] = useState(false)
   const [error, setError] = useState('')
+  const [whatsappError, setWhatsappError] = useState('')
+  const [whatsappValid, setWhatsappValid] = useState(false)
 
   const [banks, setBanks] = useState<any[]>([])
   const [isLoadingBanks, setIsLoadingBanks] = useState(true)
@@ -40,6 +42,7 @@ export default function PayoutSettingsPage() {
         if (data) {
           setUsername(data.username || '')
           setWhatsappNumber(data.whatsapp_number || '')
+          if (data.whatsapp_number) validateWhatsAppNumber(data.whatsapp_number)
         }
       }
     }
@@ -127,9 +130,57 @@ export default function PayoutSettingsPage() {
     }
   }
 
+  // WhatsApp number validation
+  const validateWhatsAppNumber = (number: string) => {
+    setWhatsappError('')
+    setWhatsappValid(false)
+
+    if (!number) return
+
+    // Must start with country code (234 for Nigeria) 
+    if (!number.startsWith('234')) {
+      setWhatsappError('Must start with country code 234 (e.g. 2348123456789)')
+      return
+    }
+
+    // Nigerian numbers: 234 + 10 digits = 13 digits total
+    if (number.length < 13) {
+      setWhatsappError('Number is too short. Format: 234XXXXXXXXXX (13 digits)')
+      return
+    }
+
+    if (number.length > 15) {
+      setWhatsappError('Number is too long. Maximum 15 digits.')
+      return
+    }
+
+    // Check the digit after 234 — Nigerian mobile numbers start with 7, 8, or 9
+    const localPart = number.slice(3)
+    if (!/^[789]/.test(localPart)) {
+      setWhatsappError('Not a valid Nigerian mobile number. Must start with 234 followed by 7, 8, or 9.')
+      return
+    }
+
+    setWhatsappValid(true)
+  }
+
+  const handleWhatsAppChange = (value: string) => {
+    const cleaned = value.replace(/\D/g, '')
+    setWhatsappNumber(cleaned)
+    validateWhatsAppNumber(cleaned)
+  }
+
   const handleSaveProfileDetails = async () => {
     setIsProfileSaving(true)
     setError('')
+
+    // Final validation before save
+    if (!whatsappValid) {
+      setError('Please enter a valid WhatsApp number before saving.')
+      setIsProfileSaving(false)
+      return
+    }
+
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error("You must be logged in to save profile details.")
@@ -193,19 +244,45 @@ export default function PayoutSettingsPage() {
             
             <div>
               <label className="block text-sm font-bold text-fintech-navy mb-2">WhatsApp Number</label>
-              <input 
-                type="text" 
-                className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-fintech-navy outline-none transition-all font-medium"
-                placeholder="e.g. 2348123456789"
-                value={whatsappNumber}
-                onChange={(e) => setWhatsappNumber(e.target.value.replace(/\D/g, ''))} 
-              />
-              <p className="text-xs text-gray-400 mt-2">Include area code (e.g. 234). Used strictly by Support/Admins for dispute resolution.</p>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400">
+                  <Phone size={18} />
+                </div>
+                <input 
+                  type="text" 
+                  className={`w-full pl-12 p-4 bg-gray-50 border rounded-xl focus:ring-2 outline-none transition-all font-medium ${
+                    whatsappError 
+                      ? 'border-red-300 focus:ring-red-200' 
+                      : whatsappValid 
+                        ? 'border-green-300 focus:ring-green-200' 
+                        : 'border-gray-200 focus:ring-fintech-navy'
+                  }`}
+                  placeholder="e.g. 2348123456789"
+                  value={whatsappNumber}
+                  onChange={(e) => handleWhatsAppChange(e.target.value)} 
+                />
+                {whatsappValid && (
+                  <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                    <CheckCircle2 className="text-green-500" size={18} />
+                  </div>
+                )}
+              </div>
+              {whatsappError ? (
+                <p className="text-xs text-red-500 mt-2 flex items-center gap-1">
+                  <AlertTriangle size={12} /> {whatsappError}
+                </p>
+              ) : whatsappValid ? (
+                <p className="text-xs text-green-600 mt-2 flex items-center gap-1">
+                  <CheckCircle2 size={12} /> Valid Nigerian WhatsApp format
+                </p>
+              ) : (
+                <p className="text-xs text-gray-400 mt-2">Include country code (e.g. 234). Used strictly by Support/Admins for dispute resolution.</p>
+              )}
             </div>
 
             <Button 
               onClick={handleSaveProfileDetails}
-              disabled={!username || !whatsappNumber || isProfileSaving} 
+              disabled={!username || !whatsappNumber || !whatsappValid || isProfileSaving} 
               className="w-full bg-fintech-navy hover:bg-fintech-navy/90 text-white py-6 mt-4 disabled:opacity-50 transition-all flex justify-center items-center font-bold"
             >
               {isProfileSaving ? (

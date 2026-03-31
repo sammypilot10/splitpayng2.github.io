@@ -71,7 +71,7 @@ export default async function BrowsePoolsPage() {
 
                     <div className="flex-grow">
                       <h2 className="text-2xl font-bold text-white mb-1">{pool.service_name}</h2>
-                      <p className="text-sm text-gray-400 font-medium mb-6">Hosted by <span className="text-fintech-gold">@{pool.profiles?.username || 'VerifiedMember'}</span></p>
+                      <p className="text-sm text-gray-400 font-medium mb-6">Hosted by <span className="text-fintech-gold">@{pool.host_username || pool.profiles?.username || 'VerifiedHost'}</span></p>
 
                       <div className="flex items-end gap-1 mb-8">
                         <span className="text-3xl font-bold text-fintech-gold">

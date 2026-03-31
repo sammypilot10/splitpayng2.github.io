@@ -36,8 +36,8 @@ export function PoolCard({ pool, hostUsername }: { pool: Pool & { profiles?: { u
   const isFull = pool.current_seats >= pool.max_seats
   const colors = getBrandColors(pool.service_name)
 
-  // Resolve the username from either the explicit prop or the joined profiles data
-  const displayUsername = hostUsername || (pool as any).profiles?.username || null
+  // Resolve the username: denormalized column → JOIN → prop → fallback
+  const displayUsername = (pool as any).host_username || (pool as any).profiles?.username || hostUsername || null
 
   return (
     <div

@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
-import { Wallet, Users, ArrowRight, Settings, PlusCircle, CreditCard, Key, Edit3, X, Loader2, Building2, CheckCircle2, Link2, Copy, RefreshCw } from 'lucide-react'
+import { Wallet, Users, ArrowRight, Settings, PlusCircle, CreditCard, Key, Edit3, X, Loader2, Building2, CheckCircle2, Link2, Copy, RefreshCw, User, MessageCircle } from 'lucide-react'
 import WithdrawButton from './WithdrawButton'
 import { EscrowTimer } from '@/components/ui/EscrowTimer'
 import { AppNavbar } from '@/components/layout/AppNavbar'
@@ -267,6 +267,42 @@ export default function DashboardPage() {
           {/* RIGHT COLUMN (HOST ONLY) */}
           {isHost && (
           <div className="space-y-8">
+
+            {/* 🔥 Host Profile Section */}
+            <div className="p-5 rounded-2xl bg-white/5 border border-white/10">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                  <User className="text-fintech-gold" size={18} /> Host Profile
+                </h2>
+                <Link href="/dashboard/settings">
+                  <button className="text-xs text-fintech-gold hover:underline font-medium">Edit</button>
+                </Link>
+              </div>
+              {profile?.username ? (
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-white/50">Username</span>
+                    <span className="text-sm font-bold text-fintech-gold">@{profile.username}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-white/50 flex items-center gap-1.5"><MessageCircle size={12} /> WhatsApp</span>
+                    <span className="text-sm font-bold text-white font-mono">{profile.whatsapp_number || 'Not set'}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-green-400 bg-green-500/10 px-3 py-1.5 rounded-full w-fit">
+                    <CheckCircle2 size={12} /> Active
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-4">
+                  <p className="text-white/40 text-sm mb-3">No host profile set up yet.</p>
+                  <Link href="/dashboard/settings">
+                    <button className="px-4 py-2 rounded-lg bg-fintech-gold text-[#05080F] font-bold text-sm hover:scale-105 transition-transform">
+                      Set Up Profile
+                    </button>
+                  </Link>
+                </div>
+              )}
+            </div>
 
             {/* 🔥 Payout Account Section */}
             <div className="p-5 rounded-2xl bg-white/5 border border-white/10">
