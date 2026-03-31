@@ -1,14 +1,15 @@
 // src/components/pools/CreatePoolWizard.tsx
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Database } from '@/types/supabase'
 import { Button } from '@/components/ui/Button'
 import { MonetaryInput } from '@/components/ui/MonetaryInput'
 import { encryptData } from '@/lib/crypto'
-import { Shield, Lock, CheckCircle2, Copy } from 'lucide-react'
+import { Shield, Lock, CheckCircle2, Copy, AlertTriangle } from 'lucide-react'
+import { getMaxShareableSeats, getServiceLimitLabel, validateSeatCount } from '@/lib/serviceConfig'
 
 type PoolInsert = Database['public']['Tables']['pools']['Insert']
 type CredentialsInsert = Database['public']['Tables']['pool_credentials']['Insert']
@@ -49,12 +50,25 @@ export function CreatePoolWizard({ hostId }: { hostId: string }) {
   const [selectedPreset, setSelectedPreset] = useState(PRESET_SERVICES[0].name)
   const [serviceName, setServiceName] = useState(PRESET_SERVICES[0].name)
   const [category, setCategory] = useState(PRESET_SERVICES[0].category)
-  const [maxSeats, setMaxSeats] = useState(4)
   const [price, setPrice] = useState(2500)
   const [isPublic, setIsPublic] = useState(true)
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [inviteLink, setInviteLink] = useState('')
+
+  // ── Seat Limit Logic ──────────────────────────────────────────────
+  const currentMaxAllowed = getMaxShareableSeats(
+    selectedPreset === 'Other (Custom)' ? serviceName : selectedPreset
+  )
+  const currentLimitLabel = getServiceLimitLabel(
+    selectedPreset === 'Other (Custom)' ? serviceName : selectedPreset
+  )
+  const [maxSeats, setMaxSeats] = useState(Math.min(4, currentMaxAllowed))
+
+  // Auto-clamp seats when the service (and therefore the limit) changes
+  useEffect(() => {
+    setMaxSeats((prev) => Math.min(prev, currentMaxAllowed) || 1)
+  }, [currentMaxAllowed])
 
   const handleServiceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selected = e.target.value
@@ -70,16 +84,26 @@ export function CreatePoolWizard({ hostId }: { hostId: string }) {
     }
   }
 
+  const handleSeatChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = Number(e.target.value)
+    // Clamp between 1 and the service's max shareable seats
+    setMaxSeats(Math.max(1, Math.min(value, currentMaxAllowed)))
+  }
+
   const handleCreate = async () => {
     if (!serviceName.trim()) return alert("Please enter a service name.")
-    if (!hostId) return alert("System error: Missing Host ID. Try refreshing the page.") // Safety check
+    if (!hostId) return alert("System error: Missing Host ID. Try refreshing the page.")
     
+    // ── Strict seat validation before DB call ──
+    const seatError = validateSeatCount(serviceName.trim(), maxSeats)
+    if (seatError) return alert(seatError)
+
     setLoading(true)
     try {
       // Fetch host profile to attach metadata to the pool
       const { data: hostProfile } = await (supabase.from('profiles') as any).select('username, whatsapp_number').eq('id', hostId).single()
 
-      const poolData: any = {
+      const poolData: PoolInsert = {
         host_id: hostId, 
         host_username: hostProfile?.username || null,
         host_whatsapp: hostProfile?.whatsapp_number || null,
@@ -87,15 +111,19 @@ export function CreatePoolWizard({ hostId }: { hostId: string }) {
         category,
         price_per_seat: price,
         max_seats: maxSeats,
-        current_seats: 0, // 🔥 EXPLICITLY set to 0 so the pool starts completely empty
+        current_seats: 0,
         is_public: isPublic,
         status: 'active',
-        invite_token: !isPublic ? Array.from(crypto.getRandomValues(new Uint8Array(32)), byte => byte.toString(16).padStart(2, '0')).join('') : null
       }
+
+      // Generate invite token for private pools
+      const invite_token = !isPublic
+        ? Array.from(crypto.getRandomValues(new Uint8Array(32)), byte => byte.toString(16).padStart(2, '0')).join('')
+        : null
 
       const { data, error: poolError } = await supabase
         .from('pools')
-        .insert(poolData as any)
+        .insert({ ...poolData, invite_token } as any)
         .select()
         .single()
 
@@ -119,8 +147,8 @@ export function CreatePoolWizard({ hostId }: { hostId: string }) {
 
       if (credError) throw credError
 
-      if (!isPublic && poolData.invite_token) {
-        setInviteLink(`${window.location.origin}/pools/join?token=${poolData.invite_token}`)
+      if (!isPublic && invite_token) {
+        setInviteLink(`${window.location.origin}/pools/join?token=${invite_token}`)
         setStep(4)
       } else {
         router.push('/dashboard?success=true')
@@ -167,9 +195,25 @@ export function CreatePoolWizard({ hostId }: { hostId: string }) {
             {selectedPreset !== 'Other (Custom)' && <p className="text-xs text-gray-400 mt-2">Category: <span className="font-semibold text-fintech-gold">{category}</span></p>}
           </div>
 
+          {/* ── Seat Count with Dynamic Limits ── */}
           <div>
             <label className="block text-sm font-medium mb-2">Total Seats Available to Share</label>
-            <input type="number" value={maxSeats} onChange={(e) => setMaxSeats(Number(e.target.value))} className="w-full p-4 rounded-xl border border-gray-200 bg-gray-50 focus:border-fintech-gold outline-none" min={1} max={10} />
+            <input
+              type="number"
+              value={maxSeats}
+              onChange={handleSeatChange}
+              className="w-full p-4 rounded-xl border border-gray-200 bg-gray-50 focus:border-fintech-gold outline-none"
+              min={1}
+              max={currentMaxAllowed}
+            />
+            {/* Dynamic limit hint */}
+            <div className="mt-2 flex items-start gap-2 text-xs">
+              <AlertTriangle size={14} className="text-fintech-gold shrink-0 mt-0.5" />
+              <p className="text-gray-500">
+                <span className="font-bold text-fintech-navy">{selectedPreset === 'Other (Custom)' ? serviceName || 'Custom service' : selectedPreset}</span>
+                {' '}— {currentLimitLabel}. Max you can list: <span className="font-bold text-fintech-gold">{currentMaxAllowed}</span>
+              </p>
+            </div>
           </div>
           <Button onClick={() => setStep(2)} className="w-full py-4 text-lg mt-4" disabled={!serviceName.trim()}>Next Step</Button>
         </div>

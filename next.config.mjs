@@ -23,7 +23,7 @@ const nextConfig = {
         headers: securityHeaders,
       },
       {
-        source: '/dashboard',
+        source: '/dashboard/:path*',
         headers: [
           {
             key: 'Cache-Control',
@@ -33,6 +33,42 @@ const nextConfig = {
       },
       {
         source: '/create-pool',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          },
+        ],
+      },
+      {
+        source: '/auth/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          },
+        ],
+      },
+      {
+        source: '/browse',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          },
+        ],
+      },
+      {
+        source: '/pools/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          },
+        ],
+      },
+      {
+        source: '/admin/:path*',
         headers: [
           {
             key: 'Cache-Control',

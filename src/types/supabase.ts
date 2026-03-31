@@ -10,9 +10,9 @@ export interface Database {
         Update: { role?: 'admin' | 'host' | 'member'; ndpr_consent?: boolean }
       }
       pools: {
-        Row: { id: string; host_id: string; service_name: string; category: string; price_per_seat: number; max_seats: number; current_seats: number; is_public: boolean; status: 'active' | 'full' | 'closed'; created_at: string }
-        Insert: { id?: string; host_id: string; service_name: string; category: string; price_per_seat: number; max_seats: number; current_seats?: number; is_public?: boolean; status?: 'active' | 'full' | 'closed'; created_at?: string }
-        Update: { service_name?: string; category?: string; price_per_seat?: number; max_seats?: number; current_seats?: number; is_public?: boolean; status?: 'active' | 'full' | 'closed' }
+        Row: { id: string; host_id: string; host_username: string | null; host_whatsapp: string | null; service_name: string; category: string; price_per_seat: number; max_seats: number; current_seats: number; is_public: boolean; status: 'active' | 'full' | 'closed'; created_at: string }
+        Insert: { id?: string; host_id: string; host_username?: string | null; host_whatsapp?: string | null; service_name: string; category: string; price_per_seat: number; max_seats: number; current_seats?: number; is_public?: boolean; status?: 'active' | 'full' | 'closed'; created_at?: string }
+        Update: { service_name?: string; category?: string; price_per_seat?: number; max_seats?: number; current_seats?: number; is_public?: boolean; status?: 'active' | 'full' | 'closed'; host_username?: string | null; host_whatsapp?: string | null }
       }
       pool_credentials: {
         Row: { pool_id: string; encrypted_data: string; iv: string; created_at: string }

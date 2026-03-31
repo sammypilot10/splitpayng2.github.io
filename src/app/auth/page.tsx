@@ -28,8 +28,8 @@ function AuthForm() {
   // Automatically wipe any lingering sessions when landing on the auth page.
   useEffect(() => {
     const clearLingeringSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session) {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
         await supabase.auth.signOut()
       }
     }
