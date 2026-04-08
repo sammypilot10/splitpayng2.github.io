@@ -125,12 +125,17 @@ export async function sendEmail({ to, subject, template, data }: EmailPayload) {
 
   try {
     if (process.env.RESEND_API_KEY) {
-      await resend.emails.send({
+      const { error: resendError } = await resend.emails.send({
         from: 'SplitPayNG <onboarding@resend.dev>',
         to,
         subject,
         html
       })
+      
+      if (resendError) {
+        throw new Error(`Resend Interface Error: ${resendError.message}`)
+      }
+
       console.log(`✅ Automated Email sent to ${to} (Template: ${template})`)
     } else {
       console.log(`[Email Mock] To: ${to} | Subject: ${subject} | Template: ${template}`)

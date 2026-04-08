@@ -16,21 +16,21 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // Calculate the 3-day window
-  // We want to find subscriptions that renew exactly 3 days from today.
-  const targetDate = new Date();
-  targetDate.setDate(targetDate.getDate() + 3);
+  // Determine absolute relative times (exactly 48 to 72 hours from right now)
+  // This bypasses any local Vercel server timezone shifts vs Nigerian user times.
+  const now = new Date();
+  const upperLimit = new Date(now.getTime() + 72 * 60 * 60 * 1000).toISOString();
+  const lowerLimit = new Date(now.getTime() + 48 * 60 * 60 * 1000).toISOString();
 
-  const startOfDay = new Date(targetDate.setHours(0,0,0,0)).toISOString();
-  const endOfDay = new Date(targetDate.setHours(23,59,59,999)).toISOString();
-
-  // Fetch active subscriptions renewing in the 3-day window
+  // Fetch active subscriptions renewing in the target window that haven't gotten an email yet
   const { data: upcomingMembers, error } = await supabase
     .from('pool_members')
     .select('id, next_billing_date, pools(service_name, price_per_seat), profiles(email)')
     .eq('status', 'active')
-    .gte('next_billing_date', startOfDay)
-    .lte('next_billing_date', endOfDay)
+    .gte('next_billing_date', lowerLimit)
+    .lte('next_billing_date', upperLimit)
+    .is('reminder_sent_at', null)
+    .limit(100); // Process in manageable slices to avoid Vercel edge timeouts
 
   if (error || !upcomingMembers || upcomingMembers.length === 0) {
     return NextResponse.json({ message: 'No subscriptions due for a 3-day reminder today.', error })
@@ -57,6 +57,10 @@ export async function GET(req: Request) {
             amount: pricePerSeat
           }
         })
+        
+        // 🔒 The Idempotent Lock: Flag the row so they don't get spammed if the cron repeats!
+        await supabase.from('pool_members').update({ reminder_sent_at: new Date().toISOString() } as any).eq('id', member.id);
+        
         results.push({ id: member.id, status: 'reminder_sent' })
       }
     } catch (err) {

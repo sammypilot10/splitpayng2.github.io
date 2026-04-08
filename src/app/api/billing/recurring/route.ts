@@ -26,24 +26,29 @@ export async function GET(req: Request) {
     .in('status', ['active', 'past_due'])
     .lt('retry_count', 3)
     .lte('next_billing_date', new Date().toISOString())
+    .limit(100); // 🔒 Ensure we don't drop rows with the 1,000 Supabase cull by restricting the working set
 
   if (!dueMembers || dueMembers.length === 0) {
     return NextResponse.json({ message: 'No subscriptions due today.' })
   }
 
-  const results = []
+  const results: any[] = []
 
-  // 3. Process idempotently
-  for (const member of dueMembers) {
-    try {
-      const memberEmail = Array.isArray(member.profiles) ? member.profiles[0]?.email : (member.profiles as any)?.email;
-      const serviceName = Array.isArray(member.pools) ? member.pools[0]?.service_name : (member.pools as any)?.service_name;
-      const pricePerSeat = Array.isArray(member.pools) ? member.pools[0]?.price_per_seat : (member.pools as any)?.price_per_seat;
+  // 3. Process concurrently in small batches to rapidly process queues before Vercel timeout
+  const BATCH_SIZE = 10;
+  for (let i = 0; i < dueMembers.length; i += BATCH_SIZE) {
+    const batch = dueMembers.slice(i, i + BATCH_SIZE);
+    
+    await Promise.all(batch.map(async (member) => {
+      try {
+        const memberEmail = Array.isArray(member.profiles) ? member.profiles[0]?.email : (member.profiles as any)?.email;
+        const serviceName = Array.isArray(member.pools) ? member.pools[0]?.service_name : (member.pools as any)?.service_name;
+        const pricePerSeat = Array.isArray(member.pools) ? member.pools[0]?.price_per_seat : (member.pools as any)?.price_per_seat;
 
-      if (!memberEmail) {
-        console.error(`[CRON] Member ${member.id} has no valid email. Skipping.`);
-        continue;
-      }
+        if (!memberEmail) {
+          console.error(`[CRON] Member ${member.id} has no valid email. Skipping.`);
+          return; // skip this iteration in Promise.all map
+        }
 
       // Call Paystack to charge the saved auth token
       const chargeResult = await chargeAuthorization(
@@ -124,7 +129,8 @@ export async function GET(req: Request) {
       await handleFailedCharge(member.id, memberEmail, serviceName)
       results.push({ id: member.id, status: 'error' })
     }
-  }
+  }));
+}
 
   return NextResponse.json({ processed: results.length, results })
 }

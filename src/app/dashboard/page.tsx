@@ -264,7 +264,7 @@ export default function DashboardPage() {
             )}
 
             {/* UPGRADE TO HOST BANNER (MEMBER ONLY) */}
-            {profile?.role === 'member' && (
+            {!isHost && (
             <div className="p-6 mt-8 rounded-2xl bg-gradient-to-r from-fintech-navy/40 to-fintech-gold/10 border border-fintech-gold/20 flex flex-col sm:flex-row justify-between items-center gap-4">
               <div>
                 <h3 className="font-bold text-white flex items-center gap-2">
