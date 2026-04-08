@@ -7,7 +7,6 @@ import { createClient } from '@/lib/supabase/client'
 import { Database } from '@/types/supabase'
 import { Button } from '@/components/ui/Button'
 import { MonetaryInput } from '@/components/ui/MonetaryInput'
-import { encryptData } from '@/lib/crypto'
 import { Shield, Lock, CheckCircle2, Copy, AlertTriangle } from 'lucide-react'
 import { getMaxShareableSeats, getServiceLimitLabel, validateSeatCount } from '@/lib/serviceConfig'
 
@@ -133,7 +132,16 @@ export function CreatePoolWizard({ hostId }: { hostId: string }) {
       if (!pool || !pool.id) throw new Error("Failed to return created pool")
 
       const payload = JSON.stringify({ username, password })
-      const { encryptedData, iv } = await encryptData(payload)
+      
+      const encRes = await fetch('/api/credentials/encrypt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rawData: payload })
+      })
+      const encDataResponse = await encRes.json()
+      if (!encRes.ok) throw new Error(encDataResponse.error || "Encryption failed")
+
+      const { encryptedData, iv } = encDataResponse
 
       const credData: CredentialsInsert = {
         pool_id: pool.id,

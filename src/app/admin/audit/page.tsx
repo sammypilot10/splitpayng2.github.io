@@ -1,15 +1,24 @@
 // src/app/admin/audit/page.tsx
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { DataTable } from '@/components/admin/DataTable'
 import { ScrollText } from 'lucide-react'
 
+interface AuditLog {
+  id: string;
+  created_at: string;
+  action: string;
+  entity_table: string;
+  new_data: Record<string, unknown>;
+  profiles?: { email: string };
+}
+
 export default function AdminAuditPage() {
-  const [logs, setLogs] = useState<any[]>([])
+  const [logs, setLogs] = useState<AuditLog[]>([])
   const [loading, setLoading] = useState(true)
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
 
   useEffect(() => {
     const fetchLogs = async () => {
@@ -20,7 +29,7 @@ export default function AdminAuditPage() {
         .order('created_at', { ascending: false })
         .limit(50)
       
-      setLogs(data || [])
+      setLogs((data as unknown as AuditLog[]) || [])
       setLoading(false)
     }
     fetchLogs()
@@ -28,10 +37,10 @@ export default function AdminAuditPage() {
 
   const columns = [
     { key: 'created_at', header: 'Timestamp', render: (val: string) => <span className="text-xs text-gray-500">{new Date(val).toLocaleString()}</span> },
-    { key: 'actor', header: 'Actor (Admin)', render: (_: any, row: any) => <span className="font-medium text-[#0A0F1E]">{row.profiles?.email || 'System'}</span> },
+    { key: 'actor', header: 'Actor (Admin)', render: (_: unknown, row: AuditLog) => <span className="font-medium text-[#0A0F1E]">{row.profiles?.email || 'System'}</span> },
     { key: 'action', header: 'Action Taken', render: (val: string) => <span className="font-bold text-fintech-navy">{val}</span> },
     { key: 'entity_table', header: 'Target Table' },
-    { key: 'details', header: 'Details', render: (_: any, row: any) => <span className="text-xs text-gray-400 font-mono truncate max-w-xs block">{JSON.stringify(row.new_data)}</span> },
+    { key: 'details', header: 'Details', render: (_: unknown, row: AuditLog) => <span className="text-xs text-gray-400 font-mono truncate max-w-xs block">{JSON.stringify(row.new_data)}</span> },
   ]
 
   return (

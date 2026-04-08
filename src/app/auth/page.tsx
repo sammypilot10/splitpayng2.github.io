@@ -5,7 +5,7 @@ import { Suspense, useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/Button'
-import { Eye, EyeOff, ShieldCheck, Zap, Lock, Mail, ArrowLeft, AlertTriangle } from 'lucide-react'
+import { Eye, EyeOff, ShieldCheck, Zap, Lock, Mail, ArrowLeft, AlertTriangle, Users } from 'lucide-react'
 import Link from 'next/link'
 
 // We separate the form logic into its own component so we can wrap it in Suspense
@@ -19,6 +19,7 @@ function AuthForm() {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [ndprConsent, setNdprConsent] = useState(false)
+  const [selectedRole, setSelectedRole] = useState<'member' | 'host'>('member')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   
@@ -47,8 +48,8 @@ function AuthForm() {
       return
     }
 
-    // 🔥 DEDUCE ROLE: If they are trying to go to /dashboard or /create-pool, they want to be a Host!
-    const intendedRole = (returnTo === '/dashboard' || returnTo === '/create-pool') ? 'host' : 'member';
+    // 🔥 USE SELECTED ROLE
+    const intendedRole = (!isLogin) ? selectedRole : ((returnTo === '/dashboard' || returnTo === '/create-pool') ? 'host' : 'member');
 
     try {
       if (isLogin) {
@@ -160,19 +161,53 @@ function AuthForm() {
         </div>
 
         {!isLogin && (
-          <div className="flex items-start mt-4 bg-gray-50 p-4 rounded-xl border border-gray-100">
-            <div className="flex items-center h-5">
-              <input 
-                type="checkbox" 
-                id="ndpr"
-                checked={ndprConsent}
-                onChange={(e) => setNdprConsent(e.target.checked)}
-                className="w-4 h-4 border border-gray-300 rounded bg-white accent-fintech-gold focus:ring-3 focus:ring-fintech-gold/30 cursor-pointer"
-              />
+          <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 mt-4">
+            <label className="block text-sm font-medium text-fintech-navy mb-1.5">Are you joining to Host or Subscribe?</label>
+            <div className="flex gap-4">
+              <button
+                type="button"
+                onClick={() => setSelectedRole('member')}
+                className={`flex-1 p-4 rounded-xl border flex flex-col items-center justify-center gap-2 transition-all ${
+                  selectedRole === 'member'
+                    ? 'border-fintech-gold bg-fintech-gold/5 text-fintech-navy ring-1 ring-fintech-gold shadow-sm'
+                    : 'border-gray-200 bg-gray-50/50 text-gray-500 hover:border-fintech-gold/50 hover:bg-gray-50'
+                }`}
+              >
+                <Users size={20} className={selectedRole === 'member' ? 'text-fintech-gold' : 'opacity-50'} />
+                <span className="text-sm font-bold">Subscribe</span>
+              </button>
+              
+              <button
+                type="button"
+                onClick={() => setSelectedRole('host')}
+                className={`flex-1 p-4 rounded-xl border flex flex-col items-center justify-center gap-2 transition-all ${
+                  selectedRole === 'host'
+                    ? 'border-fintech-gold bg-fintech-gold/5 text-fintech-navy ring-1 ring-fintech-gold shadow-sm'
+                    : 'border-gray-200 bg-gray-50/50 text-gray-500 hover:border-fintech-gold/50 hover:bg-gray-50'
+                }`}
+              >
+                <div className="relative">
+                  <ShieldCheck size={20} className={selectedRole === 'host' ? 'text-fintech-gold' : 'opacity-50'} />
+                  {selectedRole === 'host' && <div className="absolute -top-1 -right-1 w-2 h-2 bg-fintech-gold rounded-full"></div>}
+                </div>
+                <span className="text-sm font-bold">Host</span>
+              </button>
             </div>
-            <label htmlFor="ndpr" className="ml-3 text-xs text-gray-600 leading-relaxed cursor-pointer">
-              I consent to the collection and processing of my personal data in accordance with the Nigerian Data Protection Regulation (NDPR).
-            </label>
+
+            <div className="flex items-start bg-gray-50 p-4 rounded-xl border border-gray-100 mt-2">
+              <div className="flex items-center h-5">
+                <input 
+                  type="checkbox" 
+                  id="ndpr"
+                  checked={ndprConsent}
+                  onChange={(e) => setNdprConsent(e.target.checked)}
+                  className="w-4 h-4 border border-gray-300 rounded bg-white accent-fintech-gold focus:ring-3 focus:ring-fintech-gold/30 cursor-pointer"
+                />
+              </div>
+              <label htmlFor="ndpr" className="ml-3 text-xs text-gray-600 leading-relaxed cursor-pointer">
+                I consent to the collection and processing of my personal data in accordance with the Nigerian Data Protection Regulation (NDPR).
+              </label>
+            </div>
           </div>
         )}
 

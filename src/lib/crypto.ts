@@ -1,6 +1,10 @@
 // For this MVP, we use a deterministic key derived from a platform secret. 
 // In a full zero-knowledge setup, this would use a user-derived Key Encryption Key (KEK).
-const ENCRYPTION_KEY = process.env.NEXT_PUBLIC_ENCRYPTION_KEY || 'splitpayng-32-byte-secure-key-12';
+if (typeof window !== 'undefined') {
+  throw new Error("SECURITY FAULT: Crypto functions must NOT be executed on the client-side.");
+}
+
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || process.env.NEXT_PUBLIC_ENCRYPTION_KEY || 'splitpayng-32-byte-secure-key-12';
 
 // Browser-safe base64 encoding helpers (no Node.js Buffer dependency)
 function uint8ArrayToBase64(bytes: Uint8Array): string {

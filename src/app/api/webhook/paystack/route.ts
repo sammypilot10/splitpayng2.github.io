@@ -12,12 +12,16 @@ export async function POST(req: Request) {
     const rawBody = await req.text()
     const signature = req.headers.get('x-paystack-signature')
 
-    // 1. HMAC Verification
+    // 1. HMAC Verification against Timing Attacks
     const hash = crypto.createHmac('sha512', process.env.PAYSTACK_SECRET_KEY!)
                        .update(rawBody)
                        .digest('hex')
 
-    if (hash !== signature) {
+    // Node.js crypto.timingSafeEqual requires Buffers of the exact same length
+    const signatureBuffer = Buffer.from(signature || '', 'hex');
+    const hashBuffer = Buffer.from(hash, 'hex');
+
+    if (signatureBuffer.length !== hashBuffer.length || !crypto.timingSafeEqual(signatureBuffer, hashBuffer)) {
       console.error("🔴 WEBHOOK SIGNATURE MISMATCH")
       return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
     }
@@ -30,17 +34,17 @@ export async function POST(req: Request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
-    // 2. Process Successful Charge
-    if (event.event === 'charge.success') {
-      const { reference, metadata } = event.data
+      // 2. Process Successful Charge
+      if (event.event === 'charge.success') {
+        const { reference, metadata } = event.data
 
-      // Idempotency check
-      const { data } = await supabase.from('transactions').select('status').eq('reference', reference).single()
-      
-      if (data?.status === 'success') return NextResponse.json({ status: 'already processed' })
-
-      // Mark TX as success
-      await supabase.from('transactions').update({ status: 'success' }).eq('reference', reference)
+        // Idempotency check with atomic locking
+        const { data: isFirstSuccess } = await supabase.rpc('mark_transaction_successful', { p_reference: reference })
+        
+        if (!isFirstSuccess) {
+           console.log(`[WEBHOOK] Transaction ${reference} was already successfully processed. Ignoring duplicate.`)
+           return NextResponse.json({ status: 'already processed' })
+        }
 
       // Create Pool Membership & Start 48h Escrow
       const escrowExpiresAt = new Date()
@@ -55,8 +59,43 @@ export async function POST(req: Request) {
 
       await supabase.from('pool_members').insert(memberPayload as never)
 
-      // Increment Pool Seat Count
-      await (supabase.rpc as any)('increment_pool_seats', { row_id: metadata.pool_id })
+      // Increment Pool Seat Count logic wrapped in Try/Catch to protect against our new CHECK constraint
+      try {
+        const { error: seatError } = await (supabase.rpc as any)('increment_pool_seats', { row_id: metadata.pool_id })
+        
+        if (seatError) {
+          // If the postgres 'increment_pool_seats' function throws due to our `CHECK (current_seats <= max_seats)` constraint,
+          // it means the pool filled up milliseconds before this transaction.
+          // We MUST NOT leave them stranded, so we instantly refund!
+          throw new Error(`Seat Increment Failed: ${seatError.message}`)
+        }
+      } catch (err: any) {
+        console.error(`[WEBHOOK SEAT OVERFLOW DETECTED] Pool is full. Initiating Auto-Refund for Tx: ${reference}`, err.message)
+        
+        // 1. Mark TX as 'failed_refunded' instead of leaving it stranded
+        await supabase.from('transactions').update({ status: 'failed_refunded' }).eq('reference', reference)
+        
+        // 2. Void membership record to stop access logic
+        await supabase.from('pool_members').update({ status: 'cancelled' } as any)
+          .eq('pool_id', metadata.pool_id)
+          .eq('member_id', metadata.user_id)
+          .eq('status', 'escrow')
+
+        // 3. Initiate actual Paystack Refund Protocol
+        const secretKey = process.env.PAYSTACK_SECRET_KEY
+        if (secretKey) {
+          await fetch('https://api.paystack.co/refund', {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${secretKey}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ transaction: reference })
+          }).catch(e => console.error("CRITICAL: Auto-Refund request to Paystack failed:", e))
+        }
+
+        return NextResponse.json({ status: 'refunded_due_to_capacity' })
+      }
     }
 
     // 🔥 3. Process Failed Charge — Handle card declines gracefully

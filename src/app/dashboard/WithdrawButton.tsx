@@ -43,13 +43,13 @@ export default function WithdrawButton({ activeEarnings }: { activeEarnings: num
   return (
     <Button 
       onClick={handleWithdraw}
-      disabled={activeEarnings === 0 || isWithdrawing}
+      disabled={activeEarnings < 30000 || isWithdrawing}
       className="w-full sm:w-auto bg-fintech-navy hover:bg-fintech-navy/90 text-white font-bold disabled:opacity-50"
     >
       {isWithdrawing ? (
         <><Loader2 className="animate-spin mr-2" size={18} /> Processing Transfer...</>
-      ) : activeEarnings === 0 ? (
-        "No Funds Available"
+      ) : activeEarnings < 30000 ? (
+        "Min. ₦30,000 Required"
       ) : (
         "Withdraw Funds Now"
       )}

@@ -24,8 +24,8 @@ export async function POST(request: Request) {
 
     const withdrawAmount = profile.balance || 0
 
-    if (withdrawAmount <= 0) {
-      return NextResponse.json({ error: 'No available funds to withdraw' }, { status: 400 })
+    if (withdrawAmount < 30000) {
+      return NextResponse.json({ error: 'Minimum withdrawal amount is ₦30,000' }, { status: 400 })
     }
 
     // 3. Verify bank details are linked
@@ -39,9 +39,7 @@ export async function POST(request: Request) {
       await new Promise(resolve => setTimeout(resolve, 1500)) 
 
       // Deduct balance even in test mode
-      await (supabase.from('profiles') as any)
-        .update({ balance: 0 })
-        .eq('id', user.id)
+      await (supabase.rpc('adjust_profile_balance', { p_user_id: user.id, p_amount_delta: -withdrawAmount } as any) as any)
       
       // 🔥 FIX: Log the fake test withdrawal directly into the 'payouts' table
       const mockRef = `mock_test_ref_${Date.now()}`
@@ -109,9 +107,7 @@ export async function POST(request: Request) {
     }
 
     // Step C: Deduct balance from profile after successful transfer initiation
-    await (supabase.from('profiles') as any)
-      .update({ balance: 0 })
-      .eq('id', user.id)
+    await (supabase.rpc('adjust_profile_balance', { p_user_id: user.id, p_amount_delta: -withdrawAmount } as any) as any)
 
     // 🔥 FIX: Log the live Paystack withdrawal directly into the 'payouts' table
     await (supabase.from('payouts') as any)

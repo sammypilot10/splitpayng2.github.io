@@ -36,10 +36,19 @@ export async function GET(req: Request) {
   // 3. Process idempotently
   for (const member of dueMembers) {
     try {
+      const memberEmail = Array.isArray(member.profiles) ? member.profiles[0]?.email : (member.profiles as any)?.email;
+      const serviceName = Array.isArray(member.pools) ? member.pools[0]?.service_name : (member.pools as any)?.service_name;
+      const pricePerSeat = Array.isArray(member.pools) ? member.pools[0]?.price_per_seat : (member.pools as any)?.price_per_seat;
+
+      if (!memberEmail) {
+        console.error(`[CRON] Member ${member.id} has no valid email. Skipping.`);
+        continue;
+      }
+
       // Call Paystack to charge the saved auth token
       const chargeResult = await chargeAuthorization(
-        member.profiles.email,
-        member.pools.price_per_seat,
+        memberEmail,
+        pricePerSeat,
         member.paystack_auth_code
       )
 

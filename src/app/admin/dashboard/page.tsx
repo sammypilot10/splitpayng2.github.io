@@ -9,13 +9,9 @@ export const dynamic = 'force-dynamic'
 export default async function AdminDashboardPage() {
   const supabase = createClient()
 
-  // 1. Fetch GMV (Total successful transaction volume)
-  // We use 'as any' because the transactions table was added directly in SQL
-  const { data: transactions } = await (supabase.from('transactions') as any)
-    .select('amount')
-    .eq('status', 'success')
-  
-  const totalGMV = transactions?.reduce((sum: number, tx: any) => sum + (tx.amount || 0), 0) || 0
+  // 1. Fetch GMV (Total successful transaction volume) via efficient RPC
+  const { data: totalGMV } = await supabase.rpc('get_total_gmv' as any)
+  const gmv = totalGMV || 0
 
   // 2. Fetch Total Users
   const { count: totalUsers } = await supabase
@@ -53,7 +49,7 @@ export default async function AdminDashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <KPICard 
           title="Total GMV (All Time)" 
-          value={`₦${totalGMV.toLocaleString()}`} 
+          value={`₦${gmv.toLocaleString()}`} 
           trend="Live" 
           trendUp={true} 
           icon={Wallet} 

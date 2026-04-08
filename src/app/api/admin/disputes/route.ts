@@ -119,14 +119,12 @@ export async function POST(req: Request) {
         const hostPayout = pool.price_per_seat - platformFee;
 
         // Forcefully debit the Host's balance (even if it goes negative)
-        const { data: hostBalance } = await supabaseAdmin.from('profiles').select('balance').eq('id', pool.host_id).single();
-        const clawbackBalance = (hostBalance?.balance || 0) - hostPayout;
-        await supabaseAdmin.from('profiles').update({ balance: clawbackBalance }).eq('id', pool.host_id);
+        await supabaseAdmin.rpc('adjust_profile_balance', { p_user_id: pool.host_id, p_amount_delta: -hostPayout });
 
-        console.log(`[CLAWBACK] Member ${memberId} refunded post-payout! Seized ₦${hostPayout} from Host ${pool.host_id}. New Balance is ₦${clawbackBalance}.`);
+        console.log(`[CLAWBACK] Member ${memberId} refunded post-payout! Seized ₦${hostPayout} from Host ${pool.host_id}.`);
       }
 
-      await supabaseAdmin.from('pool_members').update({ escrow_status: 'refunded', status: 'closed' } as any).eq('id', memberId)
+      await supabaseAdmin.from('pool_members').update({ escrow_status: 'refunded', status: 'closed' }).eq('id', memberId)
       if (pool && pool.current_seats > 0) {
         await supabaseAdmin.from('pools').update({ current_seats: pool.current_seats - 1 }).eq('id', member.pool_id)
       }
@@ -139,7 +137,7 @@ export async function POST(req: Request) {
     } 
     else if (action === 'reject') {
       // Update DB
-      await supabaseAdmin.from('pool_members').update({ escrow_status: 'confirmed', status: 'active' } as any).eq('id', memberId)
+      await supabaseAdmin.from('pool_members').update({ escrow_status: 'confirmed', status: 'active' }).eq('id', memberId)
 
       // 🔥 FIX: Credit the Host's balance with 80% (20% platform fee)
       // This is needed because the member disputed instead of confirming,
@@ -149,11 +147,9 @@ export async function POST(req: Request) {
         const platformFee = Math.round(pool.price_per_seat * PLATFORM_FEE_PERCENT);
         const hostPayout = pool.price_per_seat - platformFee;
 
-        const { data: hostBalance } = await supabaseAdmin.from('profiles').select('balance').eq('id', pool.host_id).single();
-        const newBalance = (hostBalance?.balance || 0) + hostPayout;
-        await supabaseAdmin.from('profiles').update({ balance: newBalance }).eq('id', pool.host_id);
+        await supabaseAdmin.rpc('adjust_profile_balance', { p_user_id: pool.host_id, p_amount_delta: hostPayout });
         
-        console.log(`[ADMIN] Dispute rejected. Credited Host ${pool.host_id} with ₦${hostPayout} (80% of ₦${pool.price_per_seat}). New balance: ₦${newBalance}`);
+        console.log(`[ADMIN] Dispute rejected. Credited Host ${pool.host_id} with ₦${hostPayout} (80% of ₦${pool.price_per_seat}).`);
       }
 
       // Email Content

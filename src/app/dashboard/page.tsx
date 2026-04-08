@@ -262,6 +262,27 @@ export default function DashboardPage() {
               </div>
             </div>
             )}
+
+            {/* UPGRADE TO HOST BANNER (MEMBER ONLY) */}
+            {profile?.role === 'member' && (
+            <div className="p-6 mt-8 rounded-2xl bg-gradient-to-r from-fintech-navy/40 to-fintech-gold/10 border border-fintech-gold/20 flex flex-col sm:flex-row justify-between items-center gap-4">
+              <div>
+                <h3 className="font-bold text-white flex items-center gap-2">
+                  <User size={18} className="text-fintech-gold" /> Upgrade to Host
+                </h3>
+                <p className="text-sm text-white/50 mt-1">Want to start sharing your own subscriptions and earning?</p>
+              </div>
+              
+              <Link 
+                href={`https://wa.me/${process.env.NEXT_PUBLIC_ADMIN_WHATSAPP_NUMBER || '2340000000000'}?text=${encodeURIComponent("Hello Admin, I am currently a Member on SplitPayNG and I would like to upgrade my account to become a Host.")}`}
+                target="_blank"
+              >
+                <button className="px-6 py-2.5 rounded-xl bg-fintech-gold text-[#05080F] font-bold text-sm hover:scale-105 transition-transform flex items-center gap-2 shadow-lg shadow-fintech-gold/20">
+                  <MessageCircle size={16} /> Contact Admin
+                </button>
+              </Link>
+            </div>
+            )}
           </div>
 
           {/* RIGHT COLUMN (HOST ONLY) */}
