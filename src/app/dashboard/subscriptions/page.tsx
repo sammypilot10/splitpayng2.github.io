@@ -203,6 +203,24 @@ function SubscriptionsContent() {
         <p className="text-white/50 mt-2">Manage your active memberships and view your secure credentials.</p>
       </div>
 
+      {/* 🔥 BECOME A HOST CTA — Always visible at the top */}
+      <div className="mb-8 bg-gradient-to-r from-fintech-gold/10 to-fintech-gold/5 rounded-2xl p-5 border border-fintech-gold/20 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div>
+          <h3 className="font-bold text-white flex items-center gap-2">
+            <MessageCircle size={16} className="text-fintech-gold" /> Want to Become a Host?
+          </h3>
+          <p className="text-white/50 text-sm mt-1">Earn real money by sharing your unused subscription seats.</p>
+        </div>
+        <a
+          href={`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent("Hello Admin, I would like to become a Host on SplitPayNG. Please upgrade my account. My email is: ")}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 bg-fintech-gold text-[#05080F] font-bold px-5 py-2.5 rounded-xl text-sm hover:bg-fintech-gold/90 transition-all hover:scale-105 whitespace-nowrap"
+        >
+          <MessageCircle size={16} /> Message Admin
+        </a>
+      </div>
+
       {memberships.length === 0 ? (
         <div className="bg-white/5 rounded-3xl p-12 text-center border border-white/10">
           <Lock size={48} className="mx-auto text-white/30 mb-4" />
@@ -440,21 +458,7 @@ function SubscriptionsContent() {
         </div>
       )}
 
-      {/* 🔥 BECOME A HOST CTA */}
-      <div className="mt-12 bg-gradient-to-br from-fintech-gold/10 to-fintech-gold/5 rounded-3xl p-8 border border-fintech-gold/20 text-center">
-        <h3 className="text-xl font-bold text-white mb-2">Want to Become a Host?</h3>
-        <p className="text-white/50 text-sm mb-6 max-w-md mx-auto">
-          Earn real money by sharing your unused subscription seats. Message the Admin on WhatsApp to upgrade your account to a Host.
-        </p>
-        <a
-          href={`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent("Hello Admin, I would like to become a Host on SplitPayNG. Please upgrade my account. My email is: ")}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 bg-fintech-gold text-[#05080F] font-bold px-6 py-3 rounded-xl hover:bg-fintech-gold/90 transition-all hover:scale-105"
-        >
-          <MessageCircle size={18} /> Request Host Upgrade on WhatsApp
-        </a>
-      </div>
+
     </main>
   )
 }
