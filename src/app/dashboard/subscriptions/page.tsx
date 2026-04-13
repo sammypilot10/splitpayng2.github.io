@@ -439,6 +439,22 @@ function SubscriptionsContent() {
           })}
         </div>
       )}
+
+      {/* 🔥 BECOME A HOST CTA */}
+      <div className="mt-12 bg-gradient-to-br from-fintech-gold/10 to-fintech-gold/5 rounded-3xl p-8 border border-fintech-gold/20 text-center">
+        <h3 className="text-xl font-bold text-white mb-2">Want to Become a Host?</h3>
+        <p className="text-white/50 text-sm mb-6 max-w-md mx-auto">
+          Earn real money by sharing your unused subscription seats. Message the Admin on WhatsApp to upgrade your account to a Host.
+        </p>
+        <a
+          href={`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent("Hello Admin, I would like to become a Host on SplitPayNG. Please upgrade my account. My email is: ")}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 bg-fintech-gold text-[#05080F] font-bold px-6 py-3 rounded-xl hover:bg-fintech-gold/90 transition-all hover:scale-105"
+        >
+          <MessageCircle size={18} /> Request Host Upgrade on WhatsApp
+        </a>
+      </div>
     </main>
   )
 }
