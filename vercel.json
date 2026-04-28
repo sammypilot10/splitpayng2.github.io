@@ -2,18 +2,15 @@
   "crons": [
     {
       "path": "/api/billing/recurring",
-      "schedule": "0 2 * * *",
-      "comment": "Daily 2am Lagos time: Process subscription renewals"
+      "schedule": "0 2 * * *"
     },
     {
       "path": "/api/billing/reminders",
-      "schedule": "0 9 * * *",
-      "comment": "Daily 9am: Send 3-day renewal reminder emails"
+      "schedule": "0 9 * * *"
     },
     {
       "path": "/api/cron/escrow-release",
-      "schedule": "0 1 * * *",
-      "comment": "Daily at 1am: Auto-confirm expired escrows and pay hosts"
+      "schedule": "0 1 * * *"
     }
   ]
 }
