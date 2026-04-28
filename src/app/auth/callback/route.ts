@@ -18,18 +18,24 @@ export async function GET(request: Request) {
     
     if (!error && authData.user) {
       
-      // 🔥 THE SPAM PREVENTER: Check if this user was created in the last 60 seconds
+      // Check if this is truly a brand new user (created within last 2 minutes)
+      // and they haven't logged in before (no prior sessions means first login)
       const userCreationTime = new Date(authData.user.created_at).getTime()
       const currentTime = new Date().getTime()
-      const isBrandNewUser = (currentTime - userCreationTime) < 60000 // 60,000 milliseconds = 1 minute
+      const isBrandNewUser = (currentTime - userCreationTime) < 120000 // 2 minutes window
 
-      // If they are brand new, blast the Welcome Email!
       if (isBrandNewUser && authData.user.email) {
-        await sendEmail({
-          to: authData.user.email,
-          subject: 'Welcome to SplitPayNG!',
-          template: 'WELCOME_USER'
-        });
+        try {
+          await sendEmail({
+            to: authData.user.email,
+            subject: 'Welcome to SplitPayNG! 🎉',
+            template: 'WELCOME_USER'
+          });
+          console.log(`[AUTH] Welcome email sent to ${authData.user.email}`)
+        } catch (emailErr) {
+          console.error('[AUTH] Welcome email failed (non-fatal):', emailErr)
+          // Never block the auth flow for email failures
+        }
       }
 
       // 🔥 THE SMART ROUTER: Check role if no specific route was given

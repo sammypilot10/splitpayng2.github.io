@@ -37,15 +37,28 @@ export async function GET() {
 
     if (error) throw error
 
-    const enrichedDisputes = await Promise.all((disputes || []).map(async (d: any) => {
-        if (d.pools?.host_id) {
-            const { data: host } = await supabaseAdmin.from('profiles').select('whatsapp_number').eq('id', d.pools.host_id).single()
-            return { ...d, host_whatsapp: host?.whatsapp_number }
-        }
-        return d
+    if ((disputes || []).length > 20) {
+      console.warn(`[ADMIN] Fetching ${disputes?.length} disputes with N+1 queries. Consider optimizing with JOIN.`)
+    }
+
+    const enrichedDisputes = await Promise.allSettled((disputes || []).map(async (d: any) => {
+      if (d.pools?.host_id) {
+        const { data: host } = await supabaseAdmin
+          .from('profiles')
+          .select('whatsapp_number')
+          .eq('id', d.pools.host_id)
+          .single()
+        return { ...d, host_whatsapp: host?.whatsapp_number || null }
+      }
+      return { ...d, host_whatsapp: null }
     }))
 
-    return NextResponse.json({ disputes: enrichedDisputes })
+    // Extract only fulfilled results
+    const safeDisputes = enrichedDisputes
+      .filter(r => r.status === 'fulfilled')
+      .map(r => (r as PromiseFulfilledResult<any>).value)
+
+    return NextResponse.json({ disputes: safeDisputes })
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
@@ -71,6 +84,14 @@ export async function POST(req: Request) {
     // 1. Fetch all the details we need for the email
     const { data: member } = await supabaseAdmin.from('pool_members').select('*').eq('id', memberId).single()
     if (!member) throw new Error("Member not found")
+
+    // Prevent double-processing
+    if (member.escrow_status === 'refunded') {
+      return NextResponse.json({ error: 'This dispute has already been refunded.' }, { status: 400 })
+    }
+    if (action === 'reject' && member.escrow_status === 'confirmed') {
+      return NextResponse.json({ error: 'This dispute has already been closed.' }, { status: 400 })
+    }
     
     const { data: memberProfile } = await supabaseAdmin.from('profiles').select('email').eq('id', member.member_id).single()
     const { data: pool } = await supabaseAdmin.from('pools').select('*').eq('id', member.pool_id).single()
@@ -113,7 +134,9 @@ export async function POST(req: Request) {
       // 🔥 POST-PAYOUT CLAWBACK LOGIC 🔥
       // If the member is already "active", it means the Host ALREADY got paid 80% of this money.
       // We must deduct it from their internal platform balance to avoid the platform taking a total loss.
-      if (member.status === 'active' && pool && pool.host_id && pool.price_per_seat) {
+      // Clawback only if escrow was already confirmed (meaning host already received payout)
+      const hostWasPaid = member.escrow_status === 'confirmed'
+      if (hostWasPaid && pool && pool.host_id && pool.price_per_seat) {
         const PLATFORM_FEE_PERCENT = 0.20;
         const platformFee = Math.round(pool.price_per_seat * PLATFORM_FEE_PERCENT);
         const hostPayout = pool.price_per_seat - platformFee;
@@ -121,7 +144,7 @@ export async function POST(req: Request) {
         // Forcefully debit the Host's balance (even if it goes negative)
         await supabaseAdmin.rpc('adjust_profile_balance', { p_user_id: pool.host_id, p_amount_delta: -hostPayout });
 
-        console.log(`[CLAWBACK] Member ${memberId} refunded post-payout! Seized ₦${hostPayout} from Host ${pool.host_id}.`);
+        console.log(`[CLAWBACK] Member ${memberId} refunded post-payout! Seized funds from Host ${pool.host_id}.`);
       }
 
       await supabaseAdmin.from('pool_members').update({ escrow_status: 'refunded', status: 'closed' }).eq('id', memberId)
@@ -149,7 +172,7 @@ export async function POST(req: Request) {
 
         await supabaseAdmin.rpc('adjust_profile_balance', { p_user_id: pool.host_id, p_amount_delta: hostPayout });
         
-        console.log(`[ADMIN] Dispute rejected. Credited Host ${pool.host_id} with ₦${hostPayout} (80% of ₦${pool.price_per_seat}).`);
+        console.log(`[ADMIN] Dispute rejected. Credited Host ${pool.host_id} with payout.`);
       }
 
       // Email Content
@@ -164,7 +187,7 @@ export async function POST(req: Request) {
       // Send to Member
       if (memberEmail) {
         await resend.emails.send({
-          from: 'SplitPayNG <onboarding@resend.dev>', // Change to your verified domain later!
+          from: `SplitPayNG <${process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev'}>`, // Change to your verified domain later!
           to: memberEmail,
           subject: memberSubject,
           text: memberMessage
@@ -174,7 +197,7 @@ export async function POST(req: Request) {
       // Send to Host
       if (hostEmail) {
         await resend.emails.send({
-          from: 'SplitPayNG <onboarding@resend.dev>', // Change to your verified domain later!
+          from: `SplitPayNG <${process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev'}>`, // Change to your verified domain later!
           to: hostEmail,
           subject: hostSubject,
           text: hostMessage

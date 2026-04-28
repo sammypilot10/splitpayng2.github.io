@@ -196,6 +196,18 @@ function SubscriptionsContent() {
     )
   }
 
+  // After verifying, if we have a reference but no memberships yet, show processing state
+  const reference = searchParams.get('reference')
+  if (!verifying && reference && memberships.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-32 text-white/50">
+        <div className="w-16 h-16 border-4 border-fintech-gold border-t-transparent rounded-full animate-spin mb-6" />
+        <h2 className="text-xl font-bold text-white mb-2">Processing Your Payment</h2>
+        <p className="text-white/50 text-center max-w-sm">Your membership is being set up. This usually takes 10-30 seconds. Please don't close this page.</p>
+      </div>
+    )
+  }
+
   return (
     <main className="max-w-5xl mx-auto px-6 py-12">
       <div className="mb-10">
@@ -459,6 +471,16 @@ function SubscriptionsContent() {
       )}
 
 
+      {/* WhatsApp Support Float */}
+      <a
+        href={`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent('Hello SplitPayNG Support, I need help with my subscription.')}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="fixed bottom-6 right-6 z-50 flex items-center gap-2 bg-[#25D366] text-white px-4 py-3 rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+      >
+        <MessageCircle size={20} />
+        <span className="font-bold text-sm hidden sm:block">Support</span>
+      </a>
     </main>
   )
 }

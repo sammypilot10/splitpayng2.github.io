@@ -21,12 +21,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   const profile = data as { role: string } | null
 
-  // 🔍 THE X-RAY LOGS: Look at your VS Code Terminal after you try to load the page!
-  console.log("=========================================")
-  console.log("🎯 ADMIN SECURE CHECK FOR USER:", user.email)
-  console.log("🎯 DATABASE RETURNED ROLE:", profile?.role)
-  console.log("🎯 DATABASE ERRORS?:", error?.message || "None")
-  console.log("=========================================")
+  if (error) {
+    console.error("[ADMIN] Profile fetch failed for user:", user.id)
+  }
 
   if (profile?.role !== 'admin') {
     redirect('/dashboard')

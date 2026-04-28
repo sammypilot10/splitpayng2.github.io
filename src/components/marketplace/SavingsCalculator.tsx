@@ -3,9 +3,9 @@
 import { useState } from 'react'
 
 const SERVICES = [
-  { name: 'Netflix Premium', price: 5000 },
-  { name: 'Spotify Family', price: 2200 },
-  { name: 'ChatGPT Plus', price: 18000 }
+  { name: 'Netflix Premium 4K', price: 7200 },    // Current NGN price
+  { name: 'Spotify Family Plan', price: 4600 },
+  { name: 'ChatGPT Plus', price: 18000 }           // $20 at current rate
 ]
 
 export function SavingsCalculator() {

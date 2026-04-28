@@ -44,13 +44,22 @@ export default function AdminAnalyticsPage() {
       }
 
       // Fetch live transactions and profiles from Supabase
-      const { data: txs } = await (supabase.from('transactions') as any)
+      const { data: txs, error: txError } = await supabase
+        .from('transactions')
         .select('amount, created_at')
         .eq('status', 'success')
+
+      if (txError) {
+        console.error('[Analytics] Failed to fetch transactions:', txError)
+      }
         
-      const { data: profiles } = await supabase
+      const { data: profiles, error: profileError } = await supabase
         .from('profiles')
         .select('created_at')
+
+      if (profileError) {
+        console.error('[Analytics] Failed to fetch profiles:', profileError)
+      }
 
       // Process Revenue: Sort transactions into their correct month bucket
       if (txs) {

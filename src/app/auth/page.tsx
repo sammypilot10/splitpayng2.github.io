@@ -13,6 +13,7 @@ function AuthForm() {
   const searchParams = useSearchParams()
   // 🔥 Grab the Return Ticket from the URL (defaults to /dashboard if empty)
   const returnTo = searchParams.get('returnTo') || '/dashboard'
+  const message = searchParams.get('message') || null
 
   const [isLogin, setIsLogin] = useState(true)
   const [email, setEmail] = useState('')
@@ -103,6 +104,12 @@ function AuthForm() {
           {isLogin ? 'Enter your details to access your dashboard.' : 'Start sharing subscriptions securely today.'}
         </p>
       </div>
+      
+      {message && (
+        <div className="mb-6 p-4 bg-blue-50/50 border border-blue-100 text-blue-600 rounded-xl text-sm flex items-start gap-2">
+          <span>{message}</span>
+        </div>
+      )}
       
       {error && (
         <div className="mb-6 p-4 bg-red-50/50 border border-red-100 text-red-600 rounded-xl text-sm flex items-start gap-2">

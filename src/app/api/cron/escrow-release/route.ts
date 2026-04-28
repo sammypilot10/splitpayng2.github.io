@@ -4,10 +4,9 @@ import { createClient } from '@supabase/supabase-js'
 
 export async function GET(req: Request) {
   // CRON Authentication: Ensure only Vercel can trigger this
-  if (
-    process.env.NODE_ENV === 'production' &&
-    req.headers.get('Authorization') !== `Bearer ${process.env.CRON_SECRET}`
-  ) {
+  const authHeader = req.headers.get('authorization')
+  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    console.error('[CRON] Unauthorized attempt to call escrow-release route')
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -60,7 +59,10 @@ export async function GET(req: Request) {
         // Double check for concurrency using status match!
         const { error: updateError } = await supabaseAdmin
           .from('pool_members')
-          .update({ escrow_status: 'confirmed' } as any)
+          .update({ 
+            escrow_status: 'confirmed',
+            status: 'active'
+          } as any)
           .eq('id', membership.id)
           .eq('escrow_status', 'pending') 
 
@@ -70,16 +72,16 @@ export async function GET(req: Request) {
         }
 
         // C) Call our atomic RPC to safely credit the host's wallet!
-        const { error: balanceError } = await (supabaseAdmin.rpc as any)('adjust_profile_balance', {
+        const { error: balanceError } = await supabaseAdmin.rpc('adjust_profile_balance', {
           p_user_id: poolData.host_id,
-          p_amount: amountToHost
+          p_amount_delta: amountToHost
         })
 
         if (balanceError) {
           console.error(`CRITICAL: Escrow status confirmed but Host payout failed for ${poolData.host_id}. Fix manually!`)
         } else {
           releasedCount++
-          console.log(`[ESCROW SWEEP] Successfully released ₦${amountToHost} to Host ${poolData.host_id}`)
+          console.log(`[ESCROW SWEEP] Successfully released escrow to Host ${poolData.host_id}`)
         }
       }));
     }

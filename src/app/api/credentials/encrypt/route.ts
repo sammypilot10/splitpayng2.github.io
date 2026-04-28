@@ -12,9 +12,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Already has auth check, but add request size limit
     const { rawData } = await req.json()
-    if (!rawData) {
-      return NextResponse.json({ error: 'Missing raw data to encrypt' }, { status: 400 })
+    if (!rawData || typeof rawData !== 'string' || rawData.length > 10000) {
+      return NextResponse.json({ error: 'Invalid or oversized data.' }, { status: 400 })
     }
 
     // Encrypt securely on the server

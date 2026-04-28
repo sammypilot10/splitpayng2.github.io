@@ -54,10 +54,27 @@ export async function POST(req: Request) {
         pool_id: metadata.pool_id,
         member_id: metadata.user_id,
         escrow_status: 'pending',
-        escrow_expires_at: escrowExpiresAt.toISOString()
+        escrow_expires_at: escrowExpiresAt.toISOString(),
+        paystack_auth_code: event.data?.authorization?.authorization_code || null
       }
 
       await supabase.from('pool_members').insert(memberPayload as never)
+
+      console.log(`[WEBHOOK] 🎉 New membership created | pool: ${metadata.pool_id.substring(0, 8)}... | ts: ${Date.now()}`)
+      
+      // Optional: send admin Slack/email notification for the first week
+      if (process.env.ADMIN_NOTIFICATION_EMAIL) {
+        try {
+          await sendEmail({
+            to: process.env.ADMIN_NOTIFICATION_EMAIL,
+            subject: '🎉 New SplitPayNG Member!',
+            template: 'MEMBER_JOINED',
+            data: { poolName: `Pool ${metadata.pool_id}` }
+          })
+        } catch (e) {
+          // Non-fatal
+        }
+      }
 
       // Increment Pool Seat Count logic wrapped in Try/Catch to protect against our new CHECK constraint
       try {
@@ -103,7 +120,7 @@ export async function POST(req: Request) {
       const { metadata, customer } = event.data
       const memberEmail = customer?.email
 
-      console.log(`[WEBHOOK] charge.failed received for user: ${memberEmail}`)
+      console.log(`[WEBHOOK] charge.failed received | user_email: ${memberEmail?.substring(0, 3)}***@***.com`)
 
       if (metadata?.pool_id && metadata?.user_id) {
         // Find the pool member record
@@ -141,7 +158,7 @@ export async function POST(req: Request) {
               template: 'PAYMENT_FAILED',
               data: { poolName }
             })
-            console.log(`[WEBHOOK] ✅ Sent PAYMENT_FAILED email to member: ${memberEmail}`)
+            console.log(`[WEBHOOK] ✅ Sent PAYMENT_FAILED email for pool: ${poolName}`)
           }
 
           // 3d. Send PAYMENT_FAILED_HOST email to the Host
@@ -159,7 +176,7 @@ export async function POST(req: Request) {
                 template: 'PAYMENT_FAILED_HOST',
                 data: { poolName }
               })
-              console.log(`[WEBHOOK] ✅ Sent PAYMENT_FAILED_HOST email to host: ${hostProfile.email}`)
+              console.log(`[WEBHOOK] ✅ Sent PAYMENT_FAILED_HOST email to host for pool: ${poolName}`)
             }
           }
         }

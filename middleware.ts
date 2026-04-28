@@ -59,6 +59,14 @@ export async function middleware(request: NextRequest) {
 
   const path = request.nextUrl.pathname
 
+  // Emergency maintenance mode - set MAINTENANCE_MODE=true in Vercel env to block all traffic
+  if (process.env.MAINTENANCE_MODE === 'true') {
+    const maintenanceUrl = new URL('/maintenance', request.url)
+    if (path !== '/maintenance' && !path.startsWith('/api')) {
+      return NextResponse.redirect(maintenanceUrl)
+    }
+  }
+
   // ── Route protection ──────────────────────────────────────────────
   const isProtected =
     path.startsWith('/dashboard') ||

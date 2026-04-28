@@ -49,15 +49,14 @@ export async function POST(req: Request) {
             console.log(`[LEDGER] Price: ₦${price} | Platform Fee (20%): ₦${platformFee} | Host Payout (80%): ₦${hostPayout}`);
             console.log(`[LEDGER] Adding ₦${hostPayout} to Host ${hostId} available balance...`);
             
-            const { data: hostProfile } = await supabaseAdmin.from('profiles').select('balance').eq('id', hostId).single();
-            const newBalance = (hostProfile?.balance || 0) + hostPayout;
-            
-            const { error: walletError } = await supabaseAdmin.from('profiles').update({ balance: newBalance }).eq('id', hostId);
-            
+            const { error: walletError } = await supabaseAdmin.rpc('adjust_profile_balance', {
+              p_user_id: hostId,
+              p_amount_delta: hostPayout
+            });
             if (walletError) {
-              console.error("[CRITICAL] Failed to credit wallet!", walletError);
+              console.error("[CRITICAL] Failed to credit wallet via RPC!", walletError);
             } else {
-              console.log(`[LEDGER] SUCCESS! Host wallet updated to: ₦${newBalance} (after 20% platform fee)`);
+              console.log(`[LEDGER] SUCCESS! Credited ₦${hostPayout} to Host ${hostId} atomically (20% platform fee deducted)`);
             }
           } else {
             console.error(`[CRITICAL] Failed to resolve exact pool config. PoolID: ${member.pool_id}. Error:`, poolError);

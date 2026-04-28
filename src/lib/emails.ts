@@ -126,7 +126,7 @@ export async function sendEmail({ to, subject, template, data }: EmailPayload) {
   try {
     if (process.env.RESEND_API_KEY) {
       const { error: resendError } = await resend.emails.send({
-        from: 'SplitPayNG <onboarding@resend.dev>',
+        from: `SplitPayNG <${process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev'}>`,
         to,
         subject,
         html
@@ -140,7 +140,8 @@ export async function sendEmail({ to, subject, template, data }: EmailPayload) {
     } else {
       console.log(`[Email Mock] To: ${to} | Subject: ${subject} | Template: ${template}`)
     }
-  } catch (error) {
-    console.error("Email delivery failed:", error)
+  } catch (error: any) {
+    console.error(`[EMAIL FAILED] Template: ${template} | To: ${to} | Error: ${error.message}`)
+    // Don't throw - email failures should never break the main payment flow
   }
 }

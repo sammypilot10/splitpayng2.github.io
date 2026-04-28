@@ -45,7 +45,7 @@ export async function GET(req: Request) {
       const pricePerSeat = Array.isArray(member.pools) ? member.pools[0]?.price_per_seat : (member.pools as any)?.price_per_seat;
 
       if (email && serviceName) {
-        console.log(`[CRON] Sending 3-Day Reminder to ${email} for ${serviceName}`)
+        console.log(`[CRON] Sending 3-Day Reminder for ${serviceName}`)
         
         await sendEmail({
           to: email,

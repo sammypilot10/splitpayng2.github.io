@@ -9,7 +9,7 @@ import WithdrawButton from './WithdrawButton'
 import { EscrowTimer } from '@/components/ui/EscrowTimer'
 import { AppNavbar } from '@/components/layout/AppNavbar'
 import { Button } from '@/components/ui/Button'
-import { encryptData } from '@/lib/crypto'
+
 
 export default function DashboardPage() {
   const supabase = createClient()
@@ -62,13 +62,24 @@ export default function DashboardPage() {
     setIsEncrypting(true)
     try {
       const payload = JSON.stringify(updateForm)
-      const { encryptedData, iv } = await encryptData(payload)
 
-      const { error } = await (supabase.from('pool_credentials') as any)
-        .update({ encrypted_data: encryptedData, iv: iv })
-        .eq('pool_id', poolId)
+      // Step 1: Encrypt on server (crypto must NEVER run client-side)
+      const encRes = await fetch('/api/credentials/encrypt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rawData: payload })
+      })
+      const encData = await encRes.json()
+      if (!encRes.ok) throw new Error(encData.error || 'Encryption failed')
 
-      if (error) throw error
+      // Step 2: Save to DB
+      const saveRes = await fetch('/api/credentials/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ poolId, encryptedData: encData.encryptedData, iv: encData.iv })
+      })
+      const saveResult = await saveRes.json()
+      if (!saveRes.ok) throw new Error(saveResult.error || 'Failed to save')
 
       alert("Vault credentials updated successfully. Existing members can access them immediately.")
       setUpdatingPoolId(null)
@@ -222,8 +233,9 @@ export default function DashboardPage() {
               <div className="space-y-4">
                 {myMemberships && myMemberships.length > 0 ? (
                   myMemberships.map((membership: any) => {
-                    const joinedDate = new Date(membership.joined_at).getTime()
-                    const expiresAtIso = new Date(joinedDate + 48 * 60 * 60 * 1000).toISOString()
+                    // Use the actual stored escrow expiry from database, not a recalculation
+                    const expiresAtIso = membership.escrow_expires_at || 
+                      new Date(new Date(membership.joined_at).getTime() + 48 * 60 * 60 * 1000).toISOString()
 
                     return (
                       <div key={membership.id} className="p-5 rounded-2xl bg-white/5 border border-white/10 flex flex-col sm:flex-row justify-between sm:items-center gap-4 hover:bg-white/10 transition-colors">
@@ -472,8 +484,17 @@ export default function DashboardPage() {
                     )
                   })
                 ) : (
-                  <div className="p-8 rounded-2xl bg-white/5 border border-white/10 text-center">
-                    <p className="text-fintech-slate/50 text-sm">You are not hosting any pools.</p>
+                  <div className="p-8 rounded-2xl bg-white/5 border border-dashed border-white/20 text-center">
+                    <div className="w-12 h-12 bg-fintech-gold/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <PlusCircle className="text-fintech-gold" size={24} />
+                    </div>
+                    <p className="text-white font-bold mb-2">No pools yet</p>
+                    <p className="text-white/40 text-sm mb-4">Create your first pool and start earning from your unused subscription seats.</p>
+                    <Link href="/create-pool">
+                      <button className="px-6 py-2.5 rounded-xl bg-fintech-gold text-[#05080F] font-bold text-sm hover:scale-105 transition-transform">
+                        Create Your First Pool
+                      </button>
+                    </Link>
                   </div>
                 )}
               </div>

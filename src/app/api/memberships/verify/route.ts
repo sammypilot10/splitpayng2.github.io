@@ -36,6 +36,9 @@ export async function POST(req: Request) {
         const nextDate = new Date(); nextDate.setDate(nextDate.getDate() + 30)
         const escrowExpires = new Date(); escrowExpires.setHours(escrowExpires.getHours() + 48)
 
+        // Extract auth code from Paystack response for future recurring billing
+        const authCode = paystackRes.data?.authorization?.authorization_code || null
+
         console.log("💾 SAVING MEMBERSHIP...")
         const { error: mErr } = await supabaseAdmin.from('pool_members').insert({
             pool_id: poolId,
@@ -44,7 +47,8 @@ export async function POST(req: Request) {
             escrow_status: 'pending', // Verified magic word
             escrow_expires_at: escrowExpires.toISOString(), 
             next_billing_date: nextDate.toISOString(),
-            joined_at: now
+            joined_at: now,
+            paystack_auth_code: authCode  // CRITICAL: needed for monthly auto-billing
         })
         if (mErr) throw new Error(`Pool Member Insert Failed: ${mErr.message}`)
 

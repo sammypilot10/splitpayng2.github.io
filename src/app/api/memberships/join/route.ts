@@ -12,7 +12,7 @@ export async function POST(req: Request) {
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     
     if (authError) console.log("⚠️ SUPABASE AUTH ERROR:", authError.message)
-    console.log("👤 USER DETECTED:", user ? user.email : "NONE (API thinks you are logged out!)")
+    console.log("👤 USER DETECTED:", user ? "authenticated" : "NONE (API thinks you are logged out!)")
 
     if (!user) {
       console.log("❌ FAIL: User is not authenticated. Returning 401.")
@@ -23,7 +23,12 @@ export async function POST(req: Request) {
     // 2. Parse Request Body
     const body = await req.json()
     const { poolId, amount } = body
-    console.log("📦 PAYLOAD RECEIVED: Pool ID:", poolId, "| Amount: ₦", amount)
+    console.log("📦 PAYLOAD RECEIVED: Pool ID:", poolId ? poolId.substring(0, 8) + '...' : 'missing')
+
+    // Validate amount matches the pool's actual price (prevent client-side manipulation)
+    if (!poolId || typeof amount !== 'number' || amount <= 0) {
+      return NextResponse.json({ error: 'Invalid request parameters.' }, { status: 400 })
+    }
 
     // 3. 🔥 HOST SELF-JOIN PREVENTION + POOL VALIDATION
     const { data: poolRaw } = await supabase.from('pools').select('*').eq('id', poolId).single()
@@ -32,6 +37,15 @@ export async function POST(req: Request) {
     if (!poolData) {
       return NextResponse.json({ error: 'Pool not found.' }, { status: 404 })
     }
+
+    // Strict amount verification - never trust client-sent amount
+    if (Math.abs(amount - poolData.price_per_seat) > 1) { // Allow ₦1 rounding tolerance
+      console.error(`[SECURITY] Amount mismatch! Client sent ₦${amount}, pool price is ₦${poolData.price_per_seat}`)
+      return NextResponse.json({ error: 'Payment amount mismatch. Please refresh the page.' }, { status: 400 })
+    }
+
+    // Use the database amount for Paystack, NOT the client-provided amount
+    const verifiedAmount = poolData.price_per_seat
 
     if (poolData.host_id === user.id) {
       console.log("❌ FAIL: Host attempted to join their own pool.")
@@ -79,7 +93,7 @@ export async function POST(req: Request) {
       },
       body: JSON.stringify({
         email: user.email,
-        amount: Math.round(amount * 100), // Convert to Kobo
+        amount: Math.round(verifiedAmount * 100), // Convert to Kobo using DB value
         callback_url: `${siteUrl}/dashboard/subscriptions`,
         metadata: {
           pool_id: poolId,

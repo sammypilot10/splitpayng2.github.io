@@ -73,7 +73,7 @@ export async function GET(req: Request) {
           }
         })
         notifiedCount++
-        console.log(`[CRON] ✅ Sent renewal reminder to ${memberEmail} for ${poolName}`)
+        console.log(`[CRON] ✅ Sent renewal reminder for pool ${poolName}`)
       } catch (emailErr) {
         console.error(`[CRON] ❌ Failed to send reminder to ${memberEmail}:`, emailErr)
       }

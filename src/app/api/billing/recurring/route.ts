@@ -50,6 +50,16 @@ export async function GET(req: Request) {
           return; // skip this iteration in Promise.all map
         }
 
+        if (!member.paystack_auth_code) {
+          console.error(`[CRON] Member ${member.id} has no paystack_auth_code. Cannot charge. Marking past_due.`)
+          await supabase
+            .from('pool_members')
+            .update({ status: 'past_due' })
+            .eq('id', member.id)
+          results.push({ id: member.id, status: 'no_auth_code' })
+          return // skip this member
+        }
+
       // Call Paystack to charge the saved auth token
       const chargeResult = await chargeAuthorization(
         memberEmail,
@@ -105,7 +115,7 @@ export async function GET(req: Request) {
               const memberEmail = Array.isArray(member.profiles) ? member.profiles[0]?.email : (member.profiles as any)?.email;
 
               if (hostProfile?.email && serviceName && memberEmail) {
-                  console.log(`[CRON] Member ${memberEmail} kicked out. Emailing Host ${hostProfile.email} to evict them.`)
+                  console.log(`[CRON] Member kicked out of pool ${serviceName}. Emailing Host to evict them.`)
                   await sendEmail({
                      to: hostProfile.email,
                      subject: `Action Required: Evict Member from ${serviceName}`,

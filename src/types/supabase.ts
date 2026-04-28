@@ -5,9 +5,9 @@ export interface Database {
   public: {
     Tables: {
       profiles: {
-        Row: { id: string; email: string; role: 'admin' | 'host' | 'member'; ndpr_consent: boolean; created_at: string; balance: number; username: string | null; whatsapp_number: string | null; account_name: string | null; account_number: string | null; bank_code: string | null }
-        Insert: { id: string; email: string; role?: 'admin' | 'host' | 'member'; ndpr_consent?: boolean; created_at?: string; balance?: number; username?: string | null; whatsapp_number?: string | null; account_name?: string | null; account_number?: string | null; bank_code?: string | null }
-        Update: { role?: 'admin' | 'host' | 'member'; ndpr_consent?: boolean; balance?: number; username?: string | null; whatsapp_number?: string | null; account_name?: string | null; account_number?: string | null; bank_code?: string | null }
+        Row: { id: string; email: string; role: 'admin' | 'host' | 'member'; ndpr_consent: boolean; created_at: string; balance: number; username: string | null; whatsapp_number: string | null; account_name: string | null; account_number: string | null; bank_code: string | null; bank_name: string | null }
+        Insert: { id: string; email: string; role?: 'admin' | 'host' | 'member'; ndpr_consent?: boolean; created_at?: string; balance?: number; username?: string | null; whatsapp_number?: string | null; account_name?: string | null; account_number?: string | null; bank_code?: string | null; bank_name?: string | null }
+        Update: { role?: 'admin' | 'host' | 'member'; ndpr_consent?: boolean; balance?: number; username?: string | null; whatsapp_number?: string | null; account_name?: string | null; account_number?: string | null; bank_code?: string | null; bank_name?: string | null }
         Relationships: []
       }
       pools: {
@@ -23,9 +23,87 @@ export interface Database {
         Relationships: []
       }
       pool_members: {
-        Row: { id: string; pool_id: string; member_id: string; escrow_status: 'pending' | 'confirmed' | 'disputed' | 'refunded'; escrow_expires_at: string; joined_at: string; status: 'active' | 'past_due' | 'cancelled' | 'closed' }
-        Insert: { id?: string; pool_id: string; member_id: string; escrow_status?: 'pending' | 'confirmed' | 'disputed' | 'refunded'; escrow_expires_at: string; joined_at?: string; status?: 'active' | 'past_due' | 'cancelled' | 'closed' }
-        Update: { escrow_status?: 'pending' | 'confirmed' | 'disputed' | 'refunded'; escrow_expires_at?: string; status?: 'active' | 'past_due' | 'cancelled' | 'closed' }
+        Row: {
+          id: string;
+          pool_id: string;
+          member_id: string;
+          status: 'escrow' | 'active' | 'past_due' | 'cancelled' | 'closed';
+          escrow_status: 'pending' | 'confirmed' | 'disputed' | 'refunded';
+          escrow_expires_at: string;
+          joined_at: string;
+          next_billing_date: string | null;
+          paystack_auth_code: string | null;
+          retry_count: number;
+          reminder_sent_at: string | null;
+        }
+        Insert: {
+          id?: string;
+          pool_id: string;
+          member_id: string;
+          status?: 'escrow' | 'active' | 'past_due' | 'cancelled' | 'closed';
+          escrow_status?: 'pending' | 'confirmed' | 'disputed' | 'refunded';
+          escrow_expires_at: string;
+          joined_at?: string;
+          next_billing_date?: string | null;
+          paystack_auth_code?: string | null;
+          retry_count?: number;
+          reminder_sent_at?: string | null;
+        }
+        Update: {
+          status?: 'escrow' | 'active' | 'past_due' | 'cancelled' | 'closed';
+          escrow_status?: 'pending' | 'confirmed' | 'disputed' | 'refunded';
+          escrow_expires_at?: string;
+          next_billing_date?: string | null;
+          paystack_auth_code?: string | null;
+          retry_count?: number;
+          reminder_sent_at?: string | null;
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          id: string;
+          pool_id: string | null;
+          user_id: string;
+          amount: number;
+          status: string;
+          reference: string | null;
+          created_at: string;
+        }
+        Insert: {
+          id?: string;
+          pool_id?: string | null;
+          user_id: string;
+          amount: number;
+          status?: string;
+          reference?: string | null;
+          created_at?: string;
+        }
+        Update: {
+          status?: string;
+        }
+        Relationships: []
+      }
+      payouts: {
+        Row: {
+          id: string;
+          user_id: string;
+          amount: number;
+          status: string;
+          reference: string | null;
+          created_at: string;
+        }
+        Insert: {
+          id?: string;
+          user_id: string;
+          amount: number;
+          status?: string;
+          reference?: string | null;
+          created_at?: string;
+        }
+        Update: {
+          status?: string;
+        }
         Relationships: []
       }
     }

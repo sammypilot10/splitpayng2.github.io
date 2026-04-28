@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Allow: /browse
+Disallow: /dashboard
+Disallow: /admin
+Disallow: /api
+Disallow: /create-pool
+Sitemap: https://splitpay.ng/sitemap.xml
