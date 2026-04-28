@@ -12,8 +12,8 @@
     },
     {
       "path": "/api/cron/escrow-release",
-      "schedule": "0 * * * *",
-      "comment": "Every hour: Auto-confirm expired escrows and pay hosts"
+      "schedule": "0 1 * * *",
+      "comment": "Daily at 1am: Auto-confirm expired escrows and pay hosts"
     }
   ]
 }
